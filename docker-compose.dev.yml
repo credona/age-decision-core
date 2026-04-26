@@ -1,0 +1,20 @@
+services:
+  age-decision-core:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: age-decision-core
+    ports:
+      - "${CORE_PORT:-8000}:8000"
+    volumes:
+      - .:/app
+      - ./models:/app/models
+    env_file:
+      - .env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - age-decision-network
+
+networks:
+  age-decision-network:
+    external: true
