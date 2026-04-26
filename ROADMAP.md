@@ -102,6 +102,19 @@ v2.0.0 -> privacy-first and Zero Knowledge architecture milestone
 - [x] Add stricter error response documentation
 - [x] Update README response examples
 
+<h3>v1.2.1 - Dependency and CI Maintenance</h3>
+
+- [x] Update pydantic-settings
+- [x] Update Uvicorn
+- [x] Update actions/checkout
+- [x] Update docker/setup-buildx-action
+- [x] Update docker/metadata-action
+- [x] Validate Docker runtime after dependency updates
+- [x] Validate `/health` endpoint
+- [x] Validate `/model/status` endpoint
+- [x] Validate `/estimate` endpoint with real image
+- [x] Validate full test suite
+
 <h3>v1.3.0 - Evaluation and Calibration</h3>
 
 - [ ] Improve confidence calibration
