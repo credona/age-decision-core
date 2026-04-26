@@ -16,9 +16,10 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
-COPY models ./models
 COPY scripts ./scripts
 COPY pytest.ini ./pytest.ini
+
+RUN python scripts/download_models.py
 
 EXPOSE 8000
 
