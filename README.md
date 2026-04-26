@@ -39,7 +39,7 @@ The service is designed as a privacy-first, traceable, and API-friendly core com
 
 <h2>Current Status</h2>
 
-Age Decision Core is currently at version `v1.0.1`.
+Age Decision Core is currently at version `v1.0.2`.
 
 Current test status:
 
@@ -61,13 +61,13 @@ P95 latency: 0.2485s
 The distribution image is published on GitHub Container Registry:
 
 ```text
-ghcr.io/credona/age-decision-core:v1.0.1
+ghcr.io/credona/age-decision-core:v1.0.2
 ```
 
 Run the image:
 
 ```bash
-docker run --rm -p 8000:8000 ghcr.io/credona/age-decision-core:v1.0.1
+docker run --rm -p 8000:8000 ghcr.io/credona/age-decision-core:v1.0.2
 ```
 
 Example `docker-compose.yml` usage:
@@ -75,7 +75,7 @@ Example `docker-compose.yml` usage:
 ```yaml
 services:
   age-decision-core:
-    image: ghcr.io/credona/age-decision-core:v1.0.1
+    image: ghcr.io/credona/age-decision-core:v1.0.2
     ports:
       - "8000:8000"
     env_file:
@@ -444,7 +444,7 @@ Example:
 
 <h2>ZK-Ready Proof Placeholder</h2>
 
-Version `v1.0.1` does not generate a real Zero Knowledge proof.
+Version `v1.0.2` does not generate a real Zero Knowledge proof.
 
 It only exposes a future-proof response contract for a later proof system.
 

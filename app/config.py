@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Age Decision Core"
-    app_version: str = "1.0.1"
+    app_version: str = "1.0.2"
     service_name: str = "age-decision-core"
 
     core_port: int = 8000
