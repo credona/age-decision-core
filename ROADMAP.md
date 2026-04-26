@@ -89,17 +89,32 @@ v2.0.0 -> privacy-first and Zero Knowledge architecture milestone
 - [x] Validate `/estimate` endpoint with real image
 
 
-<h3>v1.x - Next Improvements</h3>
+<h3>v1.2.0 - API Contract Stabilization</h3>
+
+- [x] Rename `cred_score` to `cred_decision_score`
+- [x] Keep `cred_score` temporarily as legacy alias
+- [x] Add stable error response schema
+- [x] Add request tracing to error responses
+- [x] Normalize `/estimate` response contract
+- [x] Add contract tests for `cred_decision_score`
+- [x] Add backward compatibility tests for `cred_score`
+- [x] Add OpenAPI schema tests
+- [x] Add stricter error response documentation
+- [x] Update README response examples
+
+<h3>v1.3.0 - Evaluation and Calibration</h3>
 
 - [ ] Improve confidence calibration
-- [ ] Add more country rules
-- [ ] Add richer benchmark reports
-- [ ] Add SDK-ready examples
 - [ ] Add model evaluation notes
+- [ ] Add richer benchmark reports
 - [ ] Add synthetic test image generation
+
+<h3>v1.4.0 - SDK and Production Readiness</h3>
+
+- [ ] Add SDK-ready examples
 - [ ] Add documented production deployment examples
 - [ ] Add image metadata validation
-- [ ] Add stricter error response documentation
+- [ ] Add more country rules
 
 <h3>v2 - Privacy-first and Zero Knowledge</h3>
 

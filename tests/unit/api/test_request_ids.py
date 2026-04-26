@@ -10,6 +10,15 @@ client = TestClient(app)
 
 def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
     async def fake_estimate(**kwargs):
+        cred_decision_score = {
+            "score": 0.0,
+            "level": "none",
+            "factors": {
+                "age_confidence": None,
+                "threshold_distance": None,
+            },
+        }
+
         return {
             "request_id": kwargs["request_id"],
             "correlation_id": kwargs["correlation_id"],
@@ -29,14 +38,8 @@ def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
                 "passed": None,
                 "provider": None,
             },
-            "cred_score": {
-                "score": 0.0,
-                "level": "none",
-                "factors": {
-                    "age_confidence": None,
-                    "threshold_distance": None,
-                },
-            },
+            "cred_decision_score": cred_decision_score,
+            "cred_score": cred_decision_score,
             "privacy": {
                 "image_stored": False,
                 "biometric_template_stored": False,
@@ -84,3 +87,5 @@ def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
 
     assert payload["request_id"] == "test-request-001"
     assert payload["correlation_id"] == "test-correlation-001"
+    assert payload["cred_decision_score"]["level"] == "none"
+    assert payload["cred_score"]["level"] == "none"

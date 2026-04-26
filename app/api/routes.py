@@ -1,7 +1,9 @@
 from uuid import uuid4
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Header
+from fastapi.responses import JSONResponse
 
+from app.schemas.error import ErrorResponse
 from app.schemas.estimate import AgeDecisionResponse
 from app.services.age_estimation_service import AgeEstimationService
 
@@ -19,7 +21,14 @@ def model_status():
     return age_estimation_service.get_model_status()
 
 
-@router.post("/estimate", response_model=AgeDecisionResponse)
+@router.post(
+    "/estimate",
+    response_model=AgeDecisionResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        500: {"model": ErrorResponse},
+    },
+)
 async def estimate_age(
     file: UploadFile = File(...),
     age_threshold: int | None = Query(default=None),
@@ -46,7 +55,51 @@ async def estimate_age(
         return AgeDecisionResponse(**result)
 
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        return _error_response(
+            status_code=400,
+            request_id=request_id,
+            correlation_id=correlation_id,
+            code=_map_value_error_code(str(exc)),
+            message=str(exc),
+        )
 
     except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        return _error_response(
+            status_code=500,
+            request_id=request_id,
+            correlation_id=correlation_id,
+            code="model_runtime_error",
+            message=str(exc),
+        )
+
+
+def _error_response(
+    status_code: int,
+    request_id: str,
+    correlation_id: str,
+    code: str,
+    message: str,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "request_id": request_id,
+            "correlation_id": correlation_id,
+            "error": {
+                "code": code,
+                "message": message,
+            },
+        },
+    )
+
+
+def _map_value_error_code(message: str) -> str:
+    normalized = message.lower()
+
+    if "empty file" in normalized:
+        return "empty_file"
+
+    if "unsupported file type" in normalized:
+        return "unsupported_file_type"
+
+    return "invalid_request"

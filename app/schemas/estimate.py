@@ -24,15 +24,15 @@ class SpoofCheck(BaseModel):
     provider: str | None
 
 
-class CredScoreFactors(BaseModel):
+class CredDecisionScoreFactors(BaseModel):
     age_confidence: float | None
     threshold_distance: float | None
 
 
-class CredScore(BaseModel):
+class CredDecisionScore(BaseModel):
     score: float
     level: Literal["high", "medium", "low", "none"]
-    factors: CredScoreFactors
+    factors: CredDecisionScoreFactors
 
 
 class PrivacyMetadata(BaseModel):
@@ -69,7 +69,9 @@ class AgeDecisionResponse(BaseModel):
     spoof_check_required: bool
     spoof_check: SpoofCheck
 
-    cred_score: CredScore
+    cred_decision_score: CredDecisionScore
+    cred_score: CredDecisionScore
+
     privacy: PrivacyMetadata
     proof: ProofMetadata
 

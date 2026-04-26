@@ -24,4 +24,5 @@ def test_estimate_with_real_image():
     assert "request_id" in payload
     assert "correlation_id" in payload
     assert payload["face_detected"] is True
+    assert payload["cred_decision_score"]["score"] >= 0
     assert payload["cred_score"]["score"] >= 0
