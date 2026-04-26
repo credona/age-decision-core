@@ -32,8 +32,9 @@ class CountryRules:
         """
         Build final mapping.
 
-        In v1.1 this simply returns DEFAULT_MAPPING,
-        but this method allows future override from environment or config.
+        Currently returns DEFAULT_MAPPING.
+
+        This method allows future overrides from environment or configuration.
         """
         return self.DEFAULT_MAPPING
 
