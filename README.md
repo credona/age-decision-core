@@ -1,5 +1,13 @@
 <h1>Age Decision Core</h1>
 
+<p>
+  <img src="https://img.shields.io/github/actions/workflow/status/credona/age-decision-core/ci.yml?branch=main&label=CI" alt="CI">
+  <img src="https://img.shields.io/github/actions/workflow/status/credona/age-decision-core/docker.yml?branch=main&label=Docker">
+  <img src="https://img.shields.io/github/actions/workflow/status/credona/age-decision-core/codeql.yml?branch=main&label=CodeQL">
+  <img src="https://img.shields.io/github/v/release/credona/age-decision-core" alt="Release">
+  <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
+</p>
+
 Age Decision Core is the main inference service of the Age Decision project.
 
 It estimates whether a person appears to be above a configurable age threshold from a face image and returns a probabilistic decision.
@@ -10,6 +18,12 @@ The service is designed as a privacy-first, traceable, and API-friendly core com
 
 - FastAPI service
 - Local Docker development setup
+- Distribution Docker image
+- GitHub Actions CI
+- Automated tests on pull requests
+- Automated release workflow
+- CodeQL scanning
+- Dependabot configuration
 - YuNet face detection
 - ONNX age estimation
 - Country-based threshold rules
@@ -25,7 +39,7 @@ The service is designed as a privacy-first, traceable, and API-friendly core com
 
 <h2>Current Status</h2>
 
-Age Decision Core is currently at version `v1.0.0`.
+Age Decision Core is currently at version `v1.0.1`.
 
 Current test status:
 
@@ -42,10 +56,47 @@ Avg latency: 0.2186s
 P95 latency: 0.2485s
 ```
 
+<h2>Docker Image</h2>
+
+The distribution image is published on GitHub Container Registry:
+
+```text
+ghcr.io/credona/age-decision-core:v1.0.1
+```
+
+Run the image:
+
+```bash
+docker run --rm -p 8000:8000 ghcr.io/credona/age-decision-core:v1.0.1
+```
+
+Example `docker-compose.yml` usage:
+
+```yaml
+services:
+  age-decision-core:
+    image: ghcr.io/credona/age-decision-core:v1.0.1
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+```
+
+Only runtime behavior parameters should be configured through environment variables.
+
+Service name, application name, and version are managed internally by the project.
+
 <h2>Repository Structure</h2>
 
 ```text
 age-decision-core/
+├── .github/
+│   ├── dependabot.yml
+│   └── workflows/
+│       ├── ci.yml
+│       ├── codeql.yml
+│       ├── docker.yml
+│       └── release.yml
 ├── app/
 │   ├── api/
 │   │   └── routes.py
@@ -79,12 +130,17 @@ age-decision-core/
 ├── tests/
 │   ├── integration/
 │   └── unit/
+├── .dockerignore
+├── .env.example
+├── .env.dev.example
+├── Dockerfile
 ├── Dockerfile.dev
 ├── docker-compose.dev.yml
 ├── requirements.txt
 ├── pytest.ini
 ├── LICENSE
-└── README.md
+├── README.md
+└── ROADMAP.md
 ```
 
 <h2>Architecture</h2>
@@ -102,15 +158,15 @@ utils/     Logging utilities
 
 <h2>Environment Variables</h2>
 
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
 Example `.env`:
 
 ```env
-APP_NAME=Age Decision Core
-APP_VERSION=1.0.0
-SERVICE_NAME=age-decision-core
-
-CORE_PORT=8000
-
 FACE_DETECTION_MODEL_PATH=models/face_detection/face_detection_yunet_2023mar.onnx
 AGE_MODEL_PATH=models/age_estimation/age-gender-prediction-ONNX.onnx
 
@@ -126,6 +182,12 @@ ENABLE_ZK_READY=true
 
 LOG_LEVEL=INFO
 LOG_FORMAT=json
+```
+
+For local development, use:
+
+```bash
+cp .env.dev.example .env
 ```
 
 <h2>Local Development with Docker</h2>
@@ -382,221 +444,19 @@ Example:
 
 <h2>ZK-Ready Proof Placeholder</h2>
 
-Version `v1.0.0` does not generate a real Zero Knowledge proof.
+Version `v1.0.1` does not generate a real Zero Knowledge proof.
 
 It only exposes a future-proof response contract for a later proof system.
 
-Example:
-
-```json
-{
-  "type": "zk-ready",
-  "status": "not_generated",
-  "claim": "age_over_threshold",
-  "threshold": 18
-}
-```
-
 Full Zero Knowledge proof generation is planned for `v2`.
-
-<h2>Structured JSON Logs</h2>
-
-Every `/estimate` call emits structured JSON logs.
-
-Example:
-
-```json
-{
-  "timestamp": "2026-04-25T18:41:34.457537+00:00",
-  "service": "age-decision-core",
-  "version": "1.0.0",
-  "level": "info",
-  "event": "age_decision_completed",
-  "request_id": "test-request-001",
-  "correlation_id": "test-correlation-001",
-  "decision": "adult",
-  "rejection_reason": null,
-  "threshold": 18,
-  "country": "FR",
-  "face_count": 1,
-  "confidence": 0.8,
-  "estimated_age": 76.0,
-  "cred_score": 0.86,
-  "cred_score_level": "high",
-  "spoof_check_required": true,
-  "spoof_check_status": "required",
-  "privacy_mode": true,
-  "zk_ready": true
-}
-```
-
-View logs:
-
-```bash
-docker compose -f docker-compose.dev.yml logs -f age-decision-core
-```
-
-<h2>Benchmark</h2>
-
-Run the benchmark script:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/benchmark.py
-```
-
-Example result:
-
-```text
---- Benchmark Results ---
-Requests: 20
-Success: 20/20
-Min latency: 0.2007s
-Max latency: 0.2491s
-Avg latency: 0.2186s
-P95 latency: 0.2485s
-```
-
-<h2>Testing</h2>
-
-Run all tests:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core pytest
-```
-
-Current result:
-
-```text
-19 passed
-```
-
-Test structure:
-
-```text
-tests/
-├── integration/
-│   ├── assets/
-│   ├── test_estimate_real_image.py
-│   └── test_privacy_response.py
-└── unit/
-    ├── api/
-    └── domain/
-```
-
-<h2>Model Files</h2>
-
-Model files are expected in:
-
-```text
-models/face_detection/face_detection_yunet_2023mar.onnx
-models/age_estimation/age-gender-prediction-ONNX.onnx
-```
-
-Download models:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
-```
-
-<h2>Scope</h2>
-
-Age Decision Core does not perform:
-
-- identity verification
-- document verification
-- biometric matching
-- anti-spoofing execution
-- gender prediction
-- emotion prediction
-- real Zero Knowledge proof generation in v1.0.0
-
-Its purpose is to:
-
-- detect a single face
-- estimate age
-- apply a threshold policy
-- return a probabilistic decision
-- expose traceable and privacy-first metadata
-
-<h2>Anti-Spoofing</h2>
-
-Anti-spoofing is intentionally handled outside this repository.
-
-The response currently includes:
-
-```json
-{
-  "spoof_check": {
-    "status": "required",
-    "passed": null,
-    "provider": null
-  }
-}
-```
-
-Anti-spoofing is handled by:
-
-```text
-age-decision-antispoof
-```
 
 <h2>Roadmap</h2>
 
-<h3>v1.0.0 - Credona Initial Public Release</h3>
+The roadmap has been moved to:
 
-- [x] Migrate repository to Credona
-- [x] Provide clean open source snapshot
-- [x] Add Apache License 2.0
-- [x] Add FastAPI inference service
-- [x] Add YuNet face detection
-- [x] Add ONNX age estimation
-- [x] Add probabilistic decision policy
-- [x] Add `cred_score`
-- [x] Add privacy-first response metadata
-- [x] Add ZK-ready proof placeholder
-- [x] Add structured JSON logs
-- [x] Add unit tests
-- [x] Add integration tests
-- [x] Add benchmark script
-- [x] Add local Docker development setup
-- [x] Add README documentation
-
-<h3>v1.0.1 - Automation and Distribution</h3>
-
-- [ ] Add GitHub Actions CI
-- [ ] Add automated tests on pull requests
-- [ ] Add Docker image build
-- [ ] Add automated release workflow
-- [ ] Add automated tag-based release notes
-- [ ] Publish Docker image
-- [ ] Add CodeQL scanning
-- [ ] Add Dependabot configuration
-
-<h3>v1.x - Next Improvements</h3>
-
-- [ ] Improve confidence calibration
-- [ ] Add more country rules
-- [ ] Add richer benchmark reports
-- [ ] Add SDK-ready examples
-- [ ] Add model evaluation notes
-- [ ] Add synthetic test image generation
-
-<h3>v2 - Privacy-first and Zero Knowledge</h3>
-
-- [ ] Complete privacy-first architecture
-- [ ] Full Zero Knowledge proof
-- [ ] Verifiable claim without exposing estimated age
-- [ ] Proof generation module
-- [ ] Proof verification module
-- [ ] SDK-friendly proof API
-
-<h3>v3 - Image Sequence and Video</h3>
-
-- [ ] Image sequence input
-- [ ] Short video input
-- [ ] Temporal consistency checks
-- [ ] Advanced liveness validation
-- [ ] Stronger spoof resistance
+```text
+ROADMAP.md
+```
 
 <h2>License</h2>
 
