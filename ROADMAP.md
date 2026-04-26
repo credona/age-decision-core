@@ -61,8 +61,28 @@ v2.0.0 -> privacy-first and Zero Knowledge architecture milestone
 - [x] Add `.env.example`
 - [x] Move roadmap to `ROADMAP.md`
 
+
+<h3>v1.0.2 - Security and Dependency Maintenance</h3>
+
+- [x] Update FastAPI
+- [x] Update Pydantic
+- [x] Update Pillow
+- [x] Update python-multipart
+- [x] Update Requests
+- [x] Update Pytest
+- [x] Update NumPy
+- [x] Update OpenCV headless
+- [x] Keep Python 3.11 runtime for ML compatibility
+- [x] Validate Docker runtime after dependency updates
+- [x] Validate `/health` endpoint
+- [x] Validate `/estimate` endpoint with real image
+
+
 <h3>v1.x - Next Improvements</h3>
 
+- [ ] Upgrade Docker runtime from Python 3.11 to Python 3.14
+- [ ] Validate ONNX Runtime compatibility with Python 3.14
+- [ ] Validate OpenCV compatibility with Python 3.14
 - [ ] Improve confidence calibration
 - [ ] Add more country rules
 - [ ] Add richer benchmark reports
