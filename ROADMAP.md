@@ -78,11 +78,19 @@ v2.0.0 -> privacy-first and Zero Knowledge architecture milestone
 - [x] Validate `/estimate` endpoint with real image
 
 
+<h3>v1.1.0 - Python Runtime Upgrade</h3>
+
+- [x] Upgrade Docker runtime from Python 3.11 to Python 3.14
+- [x] Upgrade ONNX Runtime for Python 3.14 compatibility
+- [x] Validate ONNX Runtime compatibility with Python 3.14
+- [x] Validate OpenCV compatibility with Python 3.14
+- [x] Validate `/health` endpoint
+- [x] Validate `/model/status` endpoint
+- [x] Validate `/estimate` endpoint with real image
+
+
 <h3>v1.x - Next Improvements</h3>
 
-- [ ] Upgrade Docker runtime from Python 3.11 to Python 3.14
-- [ ] Validate ONNX Runtime compatibility with Python 3.14
-- [ ] Validate OpenCV compatibility with Python 3.14
 - [ ] Improve confidence calibration
 - [ ] Add more country rules
 - [ ] Add richer benchmark reports
