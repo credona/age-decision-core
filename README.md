@@ -31,20 +31,22 @@ The service is designed as a privacy-first, traceable, and API-friendly core com
 - `request_id` and `correlation_id`
 - Structured JSON logs
 - Probabilistic decision policy
-- `cred_score`
+- `cred_decision_score`
+- Legacy-compatible `cred_score` alias
 - Privacy metadata
 - ZK-ready proof placeholder
+- Stable error response format
 - Unit and integration tests
 - Benchmark script
 
 <h2>Current Status</h2>
 
-Age Decision Core is currently at version `v1.1.0`.
+Age Decision Core is currently in active public development.
 
 Current test status:
 
 ```text
-19 passed
+24 passed
 ```
 
 Current benchmark result:
@@ -61,13 +63,13 @@ P95 latency: 0.2485s
 The distribution image is published on GitHub Container Registry:
 
 ```text
-ghcr.io/credona/age-decision-core:v1.1.0
+ghcr.io/credona/age-decision-core
 ```
 
 Run the image:
 
 ```bash
-docker run --rm -p 8000:8000 ghcr.io/credona/age-decision-core:v1.1.0
+docker run --rm -p 8000:8000 ghcr.io/credona/age-decision-core
 ```
 
 Example `docker-compose.yml` usage:
@@ -75,7 +77,7 @@ Example `docker-compose.yml` usage:
 ```yaml
 services:
   age-decision-core:
-    image: ghcr.io/credona/age-decision-core:v1.1.0
+    image: ghcr.io/credona/age-decision-core
     ports:
       - "8000:8000"
     env_file:
@@ -111,6 +113,7 @@ age-decision-core/
 │   ├── policies/
 │   │   └── country_rules.py
 │   ├── schemas/
+│   │   ├── error.py
 │   │   └── estimate.py
 │   ├── services/
 │   │   └── age_estimation_service.py
@@ -311,6 +314,14 @@ curl -X POST "http://localhost:8000/estimate?country=FR&confidence_threshold=0.9
     "passed": null,
     "provider": null
   },
+  "cred_decision_score": {
+    "score": 0.86,
+    "level": "high",
+    "factors": {
+      "age_confidence": 0.8,
+      "threshold_distance": 58.0
+    }
+  },
   "cred_score": {
     "score": 0.86,
     "level": "high",
@@ -347,6 +358,37 @@ curl -X POST "http://localhost:8000/estimate?country=FR&confidence_threshold=0.9
   }
 }
 ```
+
+<h2>Error Response Format</h2>
+
+Error responses follow a stable JSON format.
+
+The API does not expose internal exception details.
+
+Example:
+
+```json
+{
+  "request_id": "test-request-001",
+  "correlation_id": "test-correlation-001",
+  "error": {
+    "code": "unsupported_file_type",
+    "message": "Invalid request."
+  }
+}
+```
+
+Known error codes:
+
+```text
+empty_file
+unsupported_file_type
+invalid_request
+model_runtime_error
+```
+
+The `message` field is intentionally generic and stable.
+Detailed error context is available only in server logs.
 
 <h2>Decision Policy</h2>
 
@@ -395,17 +437,19 @@ JP -> 18
 
 Unknown countries fall back to the default configured threshold.
 
-<h2>Cred Score</h2>
+<h2>Cred Decision Score</h2>
 
-`cred_score` is a normalized credibility score for the returned probabilistic decision.
+`cred_decision_score` is a normalized credibility score for the returned age decision.
 
 It is not a legal proof, identity proof, or mathematical proof.
 
-It reflects decision confidence using:
+It reflects age decision confidence using:
 
 - model confidence
 - distance from the configured age threshold
 - final decision status
+
+`cred_score` is still returned as a temporary compatibility alias.
 
 Example:
 
@@ -444,11 +488,11 @@ Example:
 
 <h2>ZK-Ready Proof Placeholder</h2>
 
-Version `v1.1.0` does not generate a real Zero Knowledge proof.
+Age Decision Core does not generate a real Zero Knowledge proof yet.
 
 It only exposes a future-proof response contract for a later proof system.
 
-Full Zero Knowledge proof generation is planned for `v2`.
+Full Zero Knowledge proof generation is planned for the privacy-first proof architecture milestone.
 
 <h2>Roadmap</h2>
 

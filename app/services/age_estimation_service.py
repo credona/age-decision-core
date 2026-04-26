@@ -122,6 +122,14 @@ class AgeEstimationService:
         elif decision == "minor":
             is_adult = False
 
+        cred_decision_score = self.cred_score_calculator.compute(
+            decision=decision,
+            confidence=confidence,
+            estimated_age=estimated_age,
+            threshold=threshold,
+            margin=margin,
+        )
+
         response = {
             "request_id": request_id,
             "correlation_id": correlation_id,
@@ -137,13 +145,8 @@ class AgeEstimationService:
             "face_count": face_count,
             "spoof_check_required": True,
             "spoof_check": self._build_spoof_check(),
-            "cred_score": self.cred_score_calculator.compute(
-                decision=decision,
-                confidence=confidence,
-                estimated_age=estimated_age,
-                threshold=threshold,
-                margin=margin,
-            ),
+            "cred_decision_score": cred_decision_score,
+            "cred_score": cred_decision_score,
             "privacy": self.privacy_builder.build(
                 zk_ready=settings.enable_zk_ready,
             ),
@@ -178,6 +181,14 @@ class AgeEstimationService:
         face_count: int,
         rejection_reason: str,
     ) -> dict:
+        cred_decision_score = self.cred_score_calculator.compute(
+            decision="unknown",
+            confidence=None,
+            estimated_age=None,
+            threshold=threshold,
+            margin=margin,
+        )
+
         return {
             "request_id": request_id,
             "correlation_id": correlation_id,
@@ -193,13 +204,8 @@ class AgeEstimationService:
             "face_count": face_count,
             "spoof_check_required": True,
             "spoof_check": self._build_spoof_check(),
-            "cred_score": self.cred_score_calculator.compute(
-                decision="unknown",
-                confidence=None,
-                estimated_age=None,
-                threshold=threshold,
-                margin=margin,
-            ),
+            "cred_decision_score": cred_decision_score,
+            "cred_score": cred_decision_score,
             "privacy": self.privacy_builder.build(
                 zk_ready=settings.enable_zk_ready,
             ),
@@ -282,8 +288,8 @@ class AgeEstimationService:
                 "face_count": response["face_count"],
                 "confidence": response["confidence"],
                 "estimated_age": response["estimated_age"],
-                "cred_score": response["cred_score"]["score"],
-                "cred_score_level": response["cred_score"]["level"],
+                "cred_decision_score": response["cred_decision_score"]["score"],
+                "cred_decision_score_level": response["cred_decision_score"]["level"],
                 "spoof_check_required": response["spoof_check_required"],
                 "spoof_check_status": response["spoof_check"]["status"],
                 "privacy_mode": settings.privacy_mode,
