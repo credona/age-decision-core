@@ -363,6 +363,8 @@ curl -X POST "http://localhost:8000/estimate?country=FR&confidence_threshold=0.9
 
 Error responses follow a stable JSON format.
 
+The API does not expose internal exception details.
+
 Example:
 
 ```json
@@ -371,7 +373,7 @@ Example:
   "correlation_id": "test-correlation-001",
   "error": {
     "code": "unsupported_file_type",
-    "message": "Unsupported file type."
+    "message": "Invalid request."
   }
 }
 ```
@@ -384,6 +386,9 @@ unsupported_file_type
 invalid_request
 model_runtime_error
 ```
+
+The `message` field is intentionally generic and stable.
+Detailed error context is available only in server logs.
 
 <h2>Decision Policy</h2>
 

@@ -22,7 +22,7 @@ def test_estimate_returns_stable_error_response_for_unsupported_file_type(client
         "correlation_id": "test-correlation-001",
         "error": {
             "code": "unsupported_file_type",
-            "message": "Unsupported file type.",
+            "message": "Invalid request.",
         },
     }
 
@@ -45,3 +45,4 @@ def test_estimate_error_response_falls_back_to_request_id_as_correlation_id(clie
     assert payload["request_id"] == "test-request-002"
     assert payload["correlation_id"] == "test-request-002"
     assert payload["error"]["code"] == "unsupported_file_type"
+    assert payload["error"]["message"] == "Invalid request."
