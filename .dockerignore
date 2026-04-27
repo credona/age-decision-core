@@ -17,3 +17,10 @@ test-face.jpg
 tests
 docker-compose.dev.yml
 Dockerfile.dev
+
+models
+models/**/*.onnx
+models/**/*.bin
+models/**/*.pt
+models/**/*.pth
+models/**/*.tflite

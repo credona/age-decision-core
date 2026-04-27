@@ -14,6 +14,12 @@ The repository includes:
 scripts/benchmark.py
 ```
 
+Download models before running benchmarks:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+```
+
 Run locally from the development container:
 
 ```bash
@@ -48,6 +54,14 @@ The current benchmark does not prove:
 
 <hr>
 
+<h2>Model context</h2>
+
+Benchmark reports must identify the model files used during execution.
+
+This avoids mixing results from different model versions, sources, or runtime configurations.
+
+<hr>
+
 <h2>Evaluation direction</h2>
 
 Future benchmark work should include:
@@ -69,6 +83,7 @@ Benchmark reports should include:
 date
 runtime
 model paths
+model sources
 dataset name
 dataset size
 request count

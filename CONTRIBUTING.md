@@ -16,6 +16,7 @@ https://github.com/credona/age-decision/blob/main/CONTRIBUTING.md
 cp .env.example .env
 docker compose -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.dev.yml up -d --build
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
 ```
 
 <hr>
@@ -23,6 +24,7 @@ docker compose -f docker-compose.dev.yml up -d --build
 <h2>Run tests</h2>
 
 ```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
 docker compose -f docker-compose.dev.yml exec age-decision-core pytest
 ```
 
@@ -52,6 +54,35 @@ Do not commit:
 - generated cache folders
 - local secrets
 - unlicensed model files
+- ONNX model binaries
+- large generated artifacts
+
+Model files must be downloaded explicitly through:
+
+```text
+scripts/download_models.py
+```
+
+<hr>
+
+<h2>Model policy</h2>
+
+When adding or changing a model, update:
+
+- docs/models.md
+- scripts/download_models.py
+- related tests
+- benchmark notes when applicable
+
+Each model entry must document:
+
+- model name
+- source URL
+- expected local path
+- upstream license when known
+- project usage
+- known limitations
+- redistribution notes
 
 <hr>
 
@@ -61,6 +92,6 @@ Use:
 
 - README.md for the repository entry point
 - docs/usage.md for service usage
-- docs/models.md for model transparency
+- docs/models.md for model transparency and third-party notices
 - docs/benchmarks.md for benchmark methodology
 - CHANGELOG.md for release history
