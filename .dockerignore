@@ -11,7 +11,8 @@ env
 *.pyo
 *.pyd
 .DS_Store
-README.md
+*.md
+!README.md
 test-face.jpg
 tests
 docker-compose.dev.yml
