@@ -6,6 +6,24 @@ Global project direction is tracked in the central Age Decision repository.
 
 <hr>
 
+<h2>Unreleased (2.0.0)</h2>
+
+- Introduced privacy-first public response contract.
+- Removed `estimated_age` from public responses.
+- Removed raw confidence exposure from public responses.
+- Removed `is_adult` from public responses.
+- Removed legacy `cred_score` compatibility alias from public responses.
+- Replaced `adult`, `minor`, and `unknown` decisions with `match`, `no_match`, and `uncertain`.
+- Replaced `country` query parameter with `majority_country`.
+- Kept `age_threshold` as the explicit threshold input.
+- Removed public exposure of `age_margin` and `confidence_threshold`.
+- Replaced raw score factors with categorical factors.
+- Removed estimated age and raw confidence from structured logs.
+- Updated proof metadata around threshold-based age claims.
+- Updated privacy metadata to explicitly state that estimated age is not exposed.
+
+<hr>
+
 <h2>Unreleased</h2>
 
 - Clarified model binary policy.

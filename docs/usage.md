@@ -38,6 +38,10 @@ LOG_LEVEL=INFO
 LOG_FORMAT=json
 ```
 
+`AGE_MARGIN` and `CONFIDENCE_THRESHOLD` are internal decision policy parameters.
+
+They are not exposed in the public response.
+
 <hr>
 
 <h2>Model setup</h2>
@@ -45,7 +49,7 @@ LOG_FORMAT=json
 Download model files locally:
 
 ```bash
-python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
 ```
 
 Expected files:
@@ -66,6 +70,7 @@ Model binaries are not intended to be embedded in the public Docker image by def
 ```bash
 docker compose -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.dev.yml up -d --build
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
 ```
 
 View logs:
@@ -147,17 +152,17 @@ Example response:
 
 <h2>Estimate</h2>
 
-Basic request:
+Basic request using the default threshold:
 
 ```bash
 curl -X POST http://localhost:8000/estimate \
   -F "file=@./test-face.jpg"
 ```
 
-With request tracing:
+With request tracing and majority country:
 
 ```bash
-curl -X POST "http://localhost:8000/estimate?country=FR" \
+curl -X POST "http://localhost:8000/estimate?majority_country=FR" \
   -H "X-Request-ID: test-request-001" \
   -H "X-Correlation-ID: test-correlation-001" \
   -F "file=@./test-face.jpg"
@@ -166,15 +171,14 @@ curl -X POST "http://localhost:8000/estimate?country=FR" \
 With explicit threshold:
 
 ```bash
-curl -X POST "http://localhost:8000/estimate?country=US&age_threshold=18" \
+curl -X POST "http://localhost:8000/estimate?age_threshold=21" \
   -F "file=@./test-face.jpg"
 ```
 
-With confidence threshold:
+Threshold resolution order:
 
-```bash
-curl -X POST "http://localhost:8000/estimate?country=FR&confidence_threshold=0.9" \
-  -F "file=@./test-face.jpg"
+```text
+age_threshold > majority_country > default threshold
 ```
 
 <hr>
@@ -185,14 +189,13 @@ curl -X POST "http://localhost:8000/estimate?country=FR&confidence_threshold=0.9
 {
   "request_id": "test-request-001",
   "correlation_id": "test-correlation-001",
-  "estimated_age": 76.0,
-  "confidence": 0.8,
-  "is_adult": true,
-  "decision": "adult",
-  "threshold": 18,
-  "age_margin": 2,
-  "confidence_threshold": 0.7,
-  "country": "FR",
+  "decision": "match",
+  "threshold": {
+    "type": "minimum_age",
+    "value": 18,
+    "source": "majority_country",
+    "majority_country": "FR"
+  },
   "face_detected": true,
   "face_count": 1,
   "spoof_check_required": true,
@@ -205,21 +208,14 @@ curl -X POST "http://localhost:8000/estimate?country=FR&confidence_threshold=0.9
     "score": 0.86,
     "level": "high",
     "factors": {
-      "age_confidence": 0.8,
-      "threshold_distance": 58.0
-    }
-  },
-  "cred_score": {
-    "score": 0.86,
-    "level": "high",
-    "factors": {
-      "age_confidence": 0.8,
-      "threshold_distance": 58.0
+      "model_confidence": "medium",
+      "threshold_separation": "high"
     }
   },
   "privacy": {
     "image_stored": false,
     "biometric_template_stored": false,
+    "estimated_age_exposed": false,
     "processing": "ephemeral",
     "zk_ready": true
   },
@@ -227,48 +223,44 @@ curl -X POST "http://localhost:8000/estimate?country=FR&confidence_threshold=0.9
     "type": "zk-ready",
     "status": "not_generated",
     "claim": "age_over_threshold",
-    "threshold": 18
+    "threshold": {
+      "type": "minimum_age",
+      "value": 18,
+      "source": "majority_country",
+      "majority_country": "FR"
+    }
   },
-  "rejection_reason": null
+  "rejection_reason": null,
+  "model_info": {
+    "face_detector": "YuNet",
+    "age_estimator": "age-gender-prediction-ONNX",
+    "age_model_path": "models/age_estimation/age-gender-prediction-ONNX.onnx",
+    "face_detection_model_path": "models/face_detection/face_detection_yunet_2023mar.onnx"
+  }
 }
 ```
 
 <hr>
 
-<h2>Error response shape</h2>
+<h2>Public privacy contract</h2>
 
-Error responses follow a stable JSON format.
+The public response does not expose:
 
-The API does not expose internal exception details.
-
-```json
-{
-  "request_id": "test-request-001",
-  "correlation_id": "test-correlation-001",
-  "error": {
-    "code": "unsupported_file_type",
-    "message": "Invalid request."
-  }
-}
-```
-
-Known error codes:
-
-```text
-empty_file
-unsupported_file_type
-invalid_request
-model_runtime_error
-```
+- estimated age
+- raw model confidence
+- threshold distance
+- internal uncertainty margin
+- internal confidence threshold
+- legacy `cred_score` alias
 
 <hr>
 
 <h2>Decision values</h2>
 
 ```text
-adult
-minor
-unknown
+match
+no_match
+uncertain
 ```
 
 <hr>
@@ -277,7 +269,7 @@ unknown
 
 ```text
 low_confidence
-age_uncertain
+threshold_uncertain
 no_face
 multiple_faces
 null
@@ -285,9 +277,9 @@ null
 
 <hr>
 
-<h2>Country rules</h2>
+<h2>Majority country rules</h2>
 
-Country rules use ISO 3166-1 alpha-2 country codes.
+`majority_country` uses ISO 3166-1 alpha-2 country codes to resolve a default minimum age threshold.
 
 Examples:
 
@@ -304,4 +296,4 @@ KR -> 19
 JP -> 18
 ```
 
-Unknown countries fall back to the configured default threshold.
+Unknown majority countries fall back to the configured default threshold.

@@ -1,10 +1,10 @@
 class CredScoreCalculator:
     """
-    Computes a normalized credibility score for an age decision.
+    Computes a normalized credibility score for an age threshold decision.
 
-    The cred_score is not a proof of truth.
-    It represents how reliable the probabilistic decision appears based on
-    model confidence and distance from the configured age threshold.
+    The score does not expose raw estimated age, raw confidence, or threshold
+    distance. It only exposes categorical factors to preserve the privacy-first
+    public contract.
     """
 
     def compute(
@@ -15,13 +15,13 @@ class CredScoreCalculator:
         threshold: int,
         margin: int,
     ) -> dict:
-        if decision == "unknown" or confidence is None or estimated_age is None:
+        if decision == "uncertain" or confidence is None or estimated_age is None:
             return {
                 "score": 0.0,
                 "level": "none",
                 "factors": {
-                    "age_confidence": confidence,
-                    "threshold_distance": None,
+                    "model_confidence": self._confidence_level(confidence),
+                    "threshold_separation": "none",
                 },
             }
 
@@ -34,20 +34,50 @@ class CredScoreCalculator:
 
         score = round((confidence * 0.7) + (distance_factor * 0.3), 4)
 
-        if score >= 0.85:
-            level = "high"
-        elif score >= 0.65:
-            level = "medium"
-        elif score > 0:
-            level = "low"
-        else:
-            level = "none"
-
         return {
             "score": score,
-            "level": level,
+            "level": self._score_level(score),
             "factors": {
-                "age_confidence": confidence,
-                "threshold_distance": round(distance, 4),
+                "model_confidence": self._confidence_level(confidence),
+                "threshold_separation": self._separation_level(distance_factor),
             },
         }
+
+    def _score_level(self, score: float) -> str:
+        if score >= 0.85:
+            return "high"
+
+        if score >= 0.65:
+            return "medium"
+
+        if score > 0:
+            return "low"
+
+        return "none"
+
+    def _confidence_level(self, confidence: float | None) -> str:
+        if confidence is None:
+            return "none"
+
+        if confidence >= 0.85:
+            return "high"
+
+        if confidence >= 0.65:
+            return "medium"
+
+        if confidence > 0:
+            return "low"
+
+        return "none"
+
+    def _separation_level(self, distance_factor: float) -> str:
+        if distance_factor >= 0.85:
+            return "high"
+
+        if distance_factor >= 0.5:
+            return "medium"
+
+        if distance_factor > 0:
+            return "low"
+
+        return "none"

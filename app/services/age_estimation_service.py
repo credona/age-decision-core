@@ -16,12 +16,13 @@ from app.vision.image_loader import load_image_from_bytes
 
 class AgeEstimationService:
     """
-    Main age decision pipeline.
+    Main age threshold decision pipeline.
 
     The pipeline is privacy-first:
     - raw images are processed in memory only;
     - raw images are not stored;
     - biometric templates are not stored;
+    - estimated age is never exposed in public responses;
     - logs must only contain safe metadata.
     """
 
@@ -55,17 +56,22 @@ class AgeEstimationService:
         request_id: str,
         correlation_id: str,
         age_threshold: int | None = None,
-        age_margin: int | None = None,
-        confidence_threshold: float | None = None,
-        country: str | None = None,
+        majority_country: str | None = None,
     ) -> dict:
         image_bytes = await file.read()
 
         self._validate_file(file=file, image_bytes=image_bytes)
 
-        threshold, threshold_source = self._resolve_threshold(age_threshold, country)
-        margin = age_margin or self.default_age_margin
-        conf_threshold = confidence_threshold or self.default_confidence_threshold
+        threshold_value, threshold_source = self._resolve_threshold(
+            age_threshold=age_threshold,
+            majority_country=majority_country,
+        )
+
+        threshold = self._build_threshold_policy(
+            value=threshold_value,
+            source=threshold_source,
+            majority_country=majority_country,
+        )
 
         image = load_image_from_bytes(image_bytes)
 
@@ -73,14 +79,10 @@ class AgeEstimationService:
         face_count = len(faces)
 
         if face_count == 0:
-            response = self._unknown_response(
+            response = self._uncertain_response(
                 request_id=request_id,
                 correlation_id=correlation_id,
                 threshold=threshold,
-                margin=margin,
-                confidence_threshold=conf_threshold,
-                country=country,
-                threshold_source=threshold_source,
                 face_count=0,
                 rejection_reason="no_face",
             )
@@ -88,14 +90,10 @@ class AgeEstimationService:
             return response
 
         if face_count > 1:
-            response = self._unknown_response(
+            response = self._uncertain_response(
                 request_id=request_id,
                 correlation_id=correlation_id,
                 threshold=threshold,
-                margin=margin,
-                confidence_threshold=conf_threshold,
-                country=country,
-                threshold_source=threshold_source,
                 face_count=face_count,
                 rejection_reason="multiple_faces",
             )
@@ -110,43 +108,29 @@ class AgeEstimationService:
         decision, rejection_reason = self.decision_policy.compute(
             age=estimated_age,
             confidence=confidence,
-            threshold=threshold,
-            margin=margin,
-            confidence_threshold=conf_threshold,
+            threshold=threshold_value,
+            margin=self.default_age_margin,
+            confidence_threshold=self.default_confidence_threshold,
         )
-
-        is_adult = None
-
-        if decision == "adult":
-            is_adult = True
-        elif decision == "minor":
-            is_adult = False
 
         cred_decision_score = self.cred_score_calculator.compute(
             decision=decision,
             confidence=confidence,
             estimated_age=estimated_age,
-            threshold=threshold,
-            margin=margin,
+            threshold=threshold_value,
+            margin=self.default_age_margin,
         )
 
         response = {
             "request_id": request_id,
             "correlation_id": correlation_id,
-            "estimated_age": estimated_age,
-            "confidence": confidence,
-            "is_adult": is_adult,
             "decision": decision,
             "threshold": threshold,
-            "age_margin": margin,
-            "confidence_threshold": conf_threshold,
-            "country": country.upper() if country else None,
             "face_detected": True,
             "face_count": face_count,
             "spoof_check_required": True,
             "spoof_check": self._build_spoof_check(),
             "cred_decision_score": cred_decision_score,
-            "cred_score": cred_decision_score,
             "privacy": self.privacy_builder.build(
                 zk_ready=settings.enable_zk_ready,
             ),
@@ -155,13 +139,6 @@ class AgeEstimationService:
                 threshold=threshold,
             ),
             "rejection_reason": rejection_reason,
-            "request_policy": self._build_request_policy(
-                threshold_source=threshold_source,
-                country=country,
-                threshold=threshold,
-                margin=margin,
-                confidence_threshold=conf_threshold,
-            ),
             "model_info": self._build_model_info(),
         }
 
@@ -169,43 +146,32 @@ class AgeEstimationService:
 
         return response
 
-    def _unknown_response(
+    def _uncertain_response(
         self,
         request_id: str,
         correlation_id: str,
-        threshold: int,
-        margin: int,
-        confidence_threshold: float,
-        country: str | None,
-        threshold_source: str,
+        threshold: dict,
         face_count: int,
         rejection_reason: str,
     ) -> dict:
         cred_decision_score = self.cred_score_calculator.compute(
-            decision="unknown",
+            decision="uncertain",
             confidence=None,
             estimated_age=None,
-            threshold=threshold,
-            margin=margin,
+            threshold=threshold["value"],
+            margin=self.default_age_margin,
         )
 
         return {
             "request_id": request_id,
             "correlation_id": correlation_id,
-            "estimated_age": None,
-            "confidence": None,
-            "is_adult": None,
-            "decision": "unknown",
+            "decision": "uncertain",
             "threshold": threshold,
-            "age_margin": margin,
-            "confidence_threshold": confidence_threshold,
-            "country": country.upper() if country else None,
             "face_detected": face_count > 0,
             "face_count": face_count,
             "spoof_check_required": True,
             "spoof_check": self._build_spoof_check(),
             "cred_decision_score": cred_decision_score,
-            "cred_score": cred_decision_score,
             "privacy": self.privacy_builder.build(
                 zk_ready=settings.enable_zk_ready,
             ),
@@ -214,41 +180,35 @@ class AgeEstimationService:
                 threshold=threshold,
             ),
             "rejection_reason": rejection_reason,
-            "request_policy": self._build_request_policy(
-                threshold_source=threshold_source,
-                country=country,
-                threshold=threshold,
-                margin=margin,
-                confidence_threshold=confidence_threshold,
-            ),
             "model_info": self._build_model_info(),
         }
 
-    def _resolve_threshold(self, age_threshold: int | None, country: str | None) -> tuple[int, str]:
+    def _resolve_threshold(
+        self,
+        age_threshold: int | None,
+        majority_country: str | None,
+    ) -> tuple[int, str]:
         if age_threshold is not None:
             return age_threshold, "explicit"
 
-        country_threshold = self.country_rules.get_threshold(country)
+        country_threshold = self.country_rules.get_threshold(majority_country)
 
         if country_threshold is not None:
-            return country_threshold, "country"
+            return country_threshold, "majority_country"
 
         return self.default_age_threshold, "default"
 
-    def _build_request_policy(
+    def _build_threshold_policy(
         self,
-        threshold_source: str,
-        country: str | None,
-        threshold: int,
-        margin: int,
-        confidence_threshold: float,
+        value: int,
+        source: str,
+        majority_country: str | None,
     ) -> dict:
         return {
-            "threshold_source": threshold_source,
-            "country": country.upper() if country else None,
-            "threshold": threshold,
-            "age_margin": margin,
-            "confidence_threshold": confidence_threshold,
+            "type": "minimum_age",
+            "value": value,
+            "source": source,
+            "majority_country": majority_country.upper() if majority_country else None,
         }
 
     def _build_model_info(self) -> dict:
@@ -283,11 +243,11 @@ class AgeEstimationService:
                 "correlation_id": response["correlation_id"],
                 "decision": response["decision"],
                 "rejection_reason": response["rejection_reason"],
-                "threshold": response["threshold"],
-                "country": response["country"],
+                "threshold_type": response["threshold"]["type"],
+                "threshold_value": response["threshold"]["value"],
+                "threshold_source": response["threshold"]["source"],
+                "majority_country": response["threshold"]["majority_country"],
                 "face_count": response["face_count"],
-                "confidence": response["confidence"],
-                "estimated_age": response["estimated_age"],
                 "cred_decision_score": response["cred_decision_score"]["score"],
                 "cred_decision_score_level": response["cred_decision_score"]["level"],
                 "spoof_check_required": response["spoof_check_required"],
