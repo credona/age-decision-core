@@ -2,6 +2,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.domain.privacy import PrivacyMetadataBuilder
 
 client = TestClient(app)
 
@@ -36,3 +37,14 @@ def test_estimate_does_not_leak_sensitive_data():
 
     for key in forbidden_keys:
         assert key not in payload_str
+
+def test_privacy_metadata_is_ephemeral():
+    builder = PrivacyMetadataBuilder()
+
+    result = builder.build(zk_ready=True)
+
+    assert result["image_stored"] is False
+    assert result["biometric_template_stored"] is False
+    assert result["estimated_age_exposed"] is False
+    assert result["processing"] == "ephemeral"
+    assert result["zk_ready"] is True

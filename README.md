@@ -8,9 +8,11 @@
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License">
 </p>
 
-Age Decision Core is the age estimation and decision policy service of the Age Decision ecosystem.
+Age Decision Core is the age threshold decision service of the Age Decision ecosystem.
 
-It detects a face, estimates apparent age, applies threshold rules, and returns a probabilistic age decision.
+It detects a face, runs internal age estimation, applies threshold rules, and returns a probabilistic threshold decision.
+
+It does not expose estimated age.
 
 It does not perform identity verification, face recognition, document verification, or legal age proof.
 
@@ -46,7 +48,7 @@ curl -i http://localhost:8000/model/status
 Run an age decision:
 
 ```bash
-curl -X POST http://localhost:8000/estimate \
+curl -X POST "http://localhost:8000/estimate?majority_country=FR" \
   -H "X-Request-ID: test-request-001" \
   -H "X-Correlation-ID: test-correlation-001" \
   -F "file=@./test-face.jpg"
@@ -88,17 +90,30 @@ docs/models.md
 The main response exposes:
 
 - `decision`
+- `threshold`
 - `cred_decision_score`
-- temporary `cred_score` compatibility alias
 - `request_id`
 - `correlation_id`
 - `privacy`
 - `proof`
 - `rejection_reason`
 
-`cred_decision_score` is the explicit age decision score produced by this service.
+`decision` uses:
 
-`cred_score` is kept only as a temporary compatibility alias.
+```text
+match
+no_match
+uncertain
+```
+
+`cred_decision_score` is the explicit age threshold decision score produced by this service.
+
+The public response does not expose:
+
+- estimated age
+- raw model confidence
+- threshold distance
+- legacy `cred_score` alias
 
 <hr>
 

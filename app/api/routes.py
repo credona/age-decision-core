@@ -35,9 +35,7 @@ def model_status():
 async def estimate_age(
     file: UploadFile = File(...),
     age_threshold: int | None = Query(default=None),
-    age_margin: int | None = Query(default=None),
-    confidence_threshold: float | None = Query(default=None),
-    country: str | None = Query(default=None),
+    majority_country: str | None = Query(default=None),
     x_request_id: str | None = Header(default=None),
     x_correlation_id: str | None = Header(default=None),
 ):
@@ -50,9 +48,7 @@ async def estimate_age(
             request_id=request_id,
             correlation_id=correlation_id,
             age_threshold=age_threshold,
-            age_margin=age_margin,
-            confidence_threshold=confidence_threshold,
-            country=country,
+            majority_country=majority_country,
         )
 
         return AgeDecisionResponse(**result)

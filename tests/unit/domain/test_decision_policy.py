@@ -1,7 +1,7 @@
 from app.domain.decision_policy import DecisionPolicy
 
 
-def test_decision_policy_returns_adult():
+def test_decision_policy_returns_match():
     policy = DecisionPolicy()
 
     decision, reason = policy.compute(
@@ -12,11 +12,11 @@ def test_decision_policy_returns_adult():
         confidence_threshold=0.7,
     )
 
-    assert decision == "adult"
+    assert decision == "match"
     assert reason is None
 
 
-def test_decision_policy_returns_minor():
+def test_decision_policy_returns_no_match():
     policy = DecisionPolicy()
 
     decision, reason = policy.compute(
@@ -27,11 +27,11 @@ def test_decision_policy_returns_minor():
         confidence_threshold=0.7,
     )
 
-    assert decision == "minor"
+    assert decision == "no_match"
     assert reason is None
 
 
-def test_decision_policy_returns_unknown_for_low_confidence():
+def test_decision_policy_returns_uncertain_for_low_confidence():
     policy = DecisionPolicy()
 
     decision, reason = policy.compute(
@@ -42,11 +42,11 @@ def test_decision_policy_returns_unknown_for_low_confidence():
         confidence_threshold=0.7,
     )
 
-    assert decision == "unknown"
+    assert decision == "uncertain"
     assert reason == "low_confidence"
 
 
-def test_decision_policy_returns_unknown_for_age_uncertain():
+def test_decision_policy_returns_uncertain_for_threshold_uncertain():
     policy = DecisionPolicy()
 
     decision, reason = policy.compute(
@@ -57,5 +57,5 @@ def test_decision_policy_returns_unknown_for_age_uncertain():
         confidence_threshold=0.7,
     )
 
-    assert decision == "unknown"
-    assert reason == "age_uncertain"
+    assert decision == "uncertain"
+    assert reason == "threshold_uncertain"

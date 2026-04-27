@@ -3,13 +3,13 @@ class ProofMetadataBuilder:
     Builds ZK-ready proof metadata.
 
     This does not generate a real Zero Knowledge proof.
-    It only prepares the response contract for a future proof system.
+    It prepares the response contract for a future proof system.
     """
 
     def build(
         self,
         enabled: bool,
-        threshold: int,
+        threshold: dict,
     ) -> dict:
         if not enabled:
             return {

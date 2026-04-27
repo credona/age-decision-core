@@ -3,12 +3,11 @@ from typing import Literal
 from pydantic import BaseModel
 
 
-class RequestPolicy(BaseModel):
-    threshold_source: Literal["explicit", "country", "default"]
-    country: str | None
-    threshold: int
-    age_margin: int
-    confidence_threshold: float
+class ThresholdPolicy(BaseModel):
+    type: Literal["minimum_age"]
+    value: int
+    source: Literal["explicit", "majority_country", "default"]
+    majority_country: str | None
 
 
 class ModelInfo(BaseModel):
@@ -25,8 +24,8 @@ class SpoofCheck(BaseModel):
 
 
 class CredDecisionScoreFactors(BaseModel):
-    age_confidence: float | None
-    threshold_distance: float | None
+    model_confidence: Literal["high", "medium", "low", "none"]
+    threshold_separation: Literal["high", "medium", "low", "none"]
 
 
 class CredDecisionScore(BaseModel):
@@ -38,6 +37,7 @@ class CredDecisionScore(BaseModel):
 class PrivacyMetadata(BaseModel):
     image_stored: bool
     biometric_template_stored: bool
+    estimated_age_exposed: bool
     processing: Literal["ephemeral"]
     zk_ready: bool
 
@@ -46,22 +46,15 @@ class ProofMetadata(BaseModel):
     type: Literal["none", "zk-ready"]
     status: Literal["disabled", "not_generated"]
     claim: str | None
-    threshold: int
+    threshold: ThresholdPolicy
 
 
 class AgeDecisionResponse(BaseModel):
     request_id: str
     correlation_id: str
 
-    estimated_age: float | None
-    confidence: float | None
-    is_adult: bool | None
-    decision: Literal["adult", "minor", "unknown"]
-
-    threshold: int
-    age_margin: int
-    confidence_threshold: float
-    country: str | None
+    decision: Literal["match", "no_match", "uncertain"]
+    threshold: ThresholdPolicy
 
     face_detected: bool
     face_count: int
@@ -70,18 +63,16 @@ class AgeDecisionResponse(BaseModel):
     spoof_check: SpoofCheck
 
     cred_decision_score: CredDecisionScore
-    cred_score: CredDecisionScore
 
     privacy: PrivacyMetadata
     proof: ProofMetadata
 
     rejection_reason: Literal[
         "low_confidence",
-        "age_uncertain",
+        "threshold_uncertain",
         "no_face",
         "multiple_faces",
         None,
     ]
 
-    request_policy: RequestPolicy
     model_info: ModelInfo

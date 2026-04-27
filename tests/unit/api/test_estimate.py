@@ -12,23 +12,24 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
         "score": 0.86,
         "level": "high",
         "factors": {
-            "age_confidence": 0.8,
-            "threshold_distance": 7.0,
+            "model_confidence": "medium",
+            "threshold_separation": "high",
         },
+    }
+
+    threshold = {
+        "type": "minimum_age",
+        "value": 18,
+        "source": "majority_country",
+        "majority_country": "FR",
     }
 
     mock_estimate = AsyncMock(
         return_value={
             "request_id": expected_request_id,
             "correlation_id": expected_request_id,
-            "estimated_age": 25.0,
-            "confidence": 0.8,
-            "is_adult": True,
-            "decision": "adult",
-            "threshold": 18,
-            "age_margin": 2,
-            "confidence_threshold": 0.7,
-            "country": "FR",
+            "decision": "match",
+            "threshold": threshold,
             "face_detected": True,
             "face_count": 1,
             "spoof_check_required": True,
@@ -38,10 +39,10 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
                 "provider": None,
             },
             "cred_decision_score": cred_decision_score,
-            "cred_score": cred_decision_score,
             "privacy": {
                 "image_stored": False,
                 "biometric_template_stored": False,
+                "estimated_age_exposed": False,
                 "processing": "ephemeral",
                 "zk_ready": True,
             },
@@ -49,16 +50,9 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
                 "type": "zk-ready",
                 "status": "not_generated",
                 "claim": "age_over_threshold",
-                "threshold": 18,
+                "threshold": threshold,
             },
             "rejection_reason": None,
-            "request_policy": {
-                "threshold_source": "country",
-                "country": "FR",
-                "threshold": 18,
-                "age_margin": 2,
-                "confidence_threshold": 0.7,
-            },
             "model_info": {
                 "face_detector": "YuNet",
                 "age_estimator": "age-gender-prediction-ONNX",
@@ -71,7 +65,7 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
     monkeypatch.setattr(routes.age_estimation_service, "estimate", mock_estimate)
 
     response = client.post(
-        "/estimate?country=FR",
+        "/estimate?majority_country=FR",
         headers={"X-Request-ID": expected_request_id},
         files={
             "file": ("test-face.jpg", BytesIO(b"fake-image"), "image/jpeg"),
@@ -84,10 +78,17 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
 
     assert payload["request_id"] == expected_request_id
     assert payload["correlation_id"] == expected_request_id
-    assert payload["decision"] == "adult"
+    assert payload["decision"] == "match"
+    assert payload["threshold"]["value"] == 18
+    assert payload["threshold"]["majority_country"] == "FR"
     assert payload["cred_decision_score"]["level"] == "high"
-    assert payload["cred_score"]["level"] == "high"
     assert payload["privacy"]["image_stored"] is False
+    assert payload["privacy"]["estimated_age_exposed"] is False
     assert payload["proof"]["type"] == "zk-ready"
+
+    assert "estimated_age" not in payload
+    assert "confidence" not in payload
+    assert "is_adult" not in payload
+    assert "cred_score" not in payload
 
     mock_estimate.assert_awaited_once()
