@@ -6,7 +6,7 @@ Global project direction is tracked in the central Age Decision repository.
 
 <hr>
 
-<h2>Unreleased (2.0.0)</h2>
+<h2>2.0.0</h2>
 
 - Introduced privacy-first public response contract.
 - Removed `estimated_age` from public responses.
@@ -21,11 +21,6 @@ Global project direction is tracked in the central Age Decision repository.
 - Removed estimated age and raw confidence from structured logs.
 - Updated proof metadata around threshold-based age claims.
 - Updated privacy metadata to explicitly state that estimated age is not exposed.
-
-<hr>
-
-<h2>Unreleased</h2>
-
 - Clarified model binary policy.
 - Documented that ONNX model files must not be committed to Git.
 - Documented that public Docker images should not embed ONNX model binaries by default.
