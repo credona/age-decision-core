@@ -19,7 +19,7 @@ It does not perform identity verification, face recognition, document verificati
 <h2>Documentation</h2>
 
 - Usage: docs/usage.md
-- Models: docs/models.md
+- Models and third-party notices: docs/models.md
 - Benchmarks: docs/benchmarks.md
 - Changelog: CHANGELOG.md
 - Contributing: CONTRIBUTING.md
@@ -33,6 +33,7 @@ It does not perform identity verification, face recognition, document verificati
 cp .env.example .env
 docker compose -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.dev.yml up -d --build
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
 ```
 
 Check the service:
@@ -49,6 +50,35 @@ curl -X POST http://localhost:8000/estimate \
   -H "X-Request-ID: test-request-001" \
   -H "X-Correlation-ID: test-correlation-001" \
   -F "file=@./test-face.jpg"
+```
+
+<hr>
+
+<h2>Model files</h2>
+
+Age Decision Core uses external ONNX model files.
+
+Model binaries are not intended to be committed to Git.
+
+Model binaries are not intended to be embedded in the public Docker image by default.
+
+Download them explicitly when needed:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+```
+
+Expected local paths:
+
+```text
+models/face_detection/face_detection_yunet_2023mar.onnx
+models/age_estimation/age-gender-prediction-ONNX.onnx
+```
+
+For model origin, license notes, and redistribution checks, see:
+
+```text
+docs/models.md
 ```
 
 <hr>
@@ -78,11 +108,27 @@ The main response exposes:
 ghcr.io/credona/age-decision-core
 ```
 
+The public Docker image contains the application runtime.
+
+It should not contain ONNX model binaries by default.
+
+Run with mounted models:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+
+docker run --rm \
+  -p 8000:8000 \
+  -v "$PWD/models:/app/models" \
+  ghcr.io/credona/age-decision-core:latest
+```
+
 <hr>
 
 <h2>Testing</h2>
 
 ```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
 docker compose -f docker-compose.dev.yml exec age-decision-core pytest
 ```
 
@@ -93,3 +139,7 @@ docker compose -f docker-compose.dev.yml exec age-decision-core pytest
 This repository is released under the Apache License 2.0.
 
 See LICENSE for details.
+
+Third-party models may have their own upstream license, origin, and redistribution terms.
+
+See docs/models.md for model transparency notes.

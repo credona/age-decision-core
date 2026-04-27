@@ -40,7 +40,28 @@ LOG_FORMAT=json
 
 <hr>
 
-<h2>Run with Docker</h2>
+<h2>Model setup</h2>
+
+Download model files locally:
+
+```bash
+python scripts/download_models.py
+```
+
+Expected files:
+
+```text
+models/face_detection/face_detection_yunet_2023mar.onnx
+models/age_estimation/age-gender-prediction-ONNX.onnx
+```
+
+Model binaries are not intended to be committed to Git.
+
+Model binaries are not intended to be embedded in the public Docker image by default.
+
+<hr>
+
+<h2>Run with Docker Compose</h2>
 
 ```bash
 docker compose -f docker-compose.dev.yml down -v
@@ -57,6 +78,25 @@ Stop the service:
 
 ```bash
 docker compose -f docker-compose.dev.yml down -v
+```
+
+<hr>
+
+<h2>Run the public Docker image</h2>
+
+Download models locally first:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+```
+
+Run the image with mounted models:
+
+```bash
+docker run --rm \
+  -p 8000:8000 \
+  -v "$PWD/models:/app/models" \
+  ghcr.io/credona/age-decision-core:latest
 ```
 
 <hr>

@@ -6,6 +6,30 @@ It is intentionally separated from the main README to keep model transparency vi
 
 <hr>
 
+<h2>Model binary policy</h2>
+
+Model binaries are not intended to be committed to Git.
+
+Model binaries are not intended to be embedded in the public Docker image by default.
+
+Models should be downloaded explicitly when needed:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+```
+
+Expected local structure:
+
+```text
+models/
+  age_estimation/
+    age-gender-prediction-ONNX.onnx
+  face_detection/
+    face_detection_yunet_2023mar.onnx
+```
+
+<hr>
+
 <h2>Face detection</h2>
 
 <h3>Model</h3>
@@ -20,12 +44,18 @@ Expected path:
 models/face_detection/face_detection_yunet_2023mar.onnx
 ```
 
-<h3>Reference</h3>
+<h3>Source</h3>
 
 ```text
 OpenCV Zoo - YuNet face detection
 https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet
 ```
+
+<h3>License note</h3>
+
+The model is distributed by the OpenCV Zoo project.
+
+Before redistribution or commercial use, verify the current upstream license and model card.
 
 <h3>Usage in this project</h3>
 
@@ -48,6 +78,19 @@ Expected path:
 ```text
 models/age_estimation/age-gender-prediction-ONNX.onnx
 ```
+
+<h3>Source</h3>
+
+```text
+ONNX Community - age-gender-prediction-ONNX
+https://huggingface.co/onnx-community/age-gender-prediction-ONNX
+```
+
+<h3>License note</h3>
+
+The model page currently indicates an Apache 2.0 license.
+
+Before redistribution or commercial use, verify the current upstream license, model source, and dataset provenance.
 
 <h3>Supported output formats</h3>
 
@@ -107,14 +150,27 @@ It allows integrators to inspect:
 
 <hr>
 
-<h2>Model files</h2>
+<h2>Redistribution checklist</h2>
 
-Model files may be large and may have independent upstream licenses.
-
-Before redistribution or commercial use, verify:
+Before redistributing model binaries, verify:
 
 - upstream license
 - model source
 - dataset provenance
 - intended use
 - redistribution terms
+- attribution requirements
+- commercial usage terms
+- model card updates
+
+<hr>
+
+<h2>Current project stance</h2>
+
+Age Decision Core documents supported model paths and provides a download script.
+
+The repository should not rely on committed model binaries.
+
+The public Docker image should remain application-focused and should not include ONNX model binaries by default.
+
+This keeps the repository lighter, improves transparency, and avoids silently redistributing third-party model files.
