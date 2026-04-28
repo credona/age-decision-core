@@ -46,8 +46,8 @@ def main() -> None:
         print(f"Tag already exists remotely: {tag}")
         return
 
-    token = os.getenv("AGE_DECISION_RELEASE_TOKEN")
-    repository = os.getenv("GITHUB_REPOSITORY")
+    token = (os.getenv("AGE_DECISION_RELEASE_TOKEN") or "").strip()
+    repository = (os.getenv("GITHUB_REPOSITORY") or "").strip()
 
     if not token:
         raise SystemExit("Missing AGE_DECISION_RELEASE_TOKEN secret.")
