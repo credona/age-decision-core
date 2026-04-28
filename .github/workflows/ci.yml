@@ -171,31 +171,49 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Build Docker image
-        run: docker build -t age-decision-core:ci .
+        run: docker build -t age-decision-antispoof:ci .
+
+      - name: Download model into Docker volume
+        run: |
+          docker volume create antispoof-models-ci
+          docker run --rm \
+            -v antispoof-models-ci:/app/antispoof/models \
+            age-decision-antispoof:ci \
+            python scripts/download_models.py
 
       - name: Run Docker container
-        run: docker run -d --name age-decision-core -p 8000:8000 age-decision-core:ci
+        run: |
+          docker run -d \
+            --name age-decision-antispoof \
+            -p 8001:8001 \
+            -v antispoof-models-ci:/app/antispoof/models \
+            age-decision-antispoof:ci
 
       - name: Wait for service
         run: |
           for i in {1..30}; do
-            if curl -fsS http://localhost:8000/health; then
+            if curl -fsS http://localhost:8001/health; then
               exit 0
             fi
-            echo "Waiting... $i"
-            docker logs age-decision-core || true
+
+            echo "Waiting for age-decision-antispoof... attempt $i"
+            docker logs age-decision-antispoof || true
             sleep 2
           done
 
-          echo "Service not ready"
-          docker logs age-decision-core || true
+          echo "Service did not become ready"
+          docker logs age-decision-antispoof || true
+          docker ps -a
           exit 1
 
       - name: Check runtime endpoints
         run: |
-          curl -fsS http://localhost:8000/health
-          curl -fsS http://localhost:8000/version
+          curl -fsS http://localhost:8001/health
+          curl -fsS http://localhost:8001/version
+          curl -fsS http://localhost:8001/model/status
 
-      - name: Cleanup
+      - name: Cleanup Docker resources
         if: always()
-        run: docker rm -f age-decision-core || true
+        run: |
+          docker rm -f age-decision-antispoof || true
+          docker volume rm antispoof-models-ci || true
