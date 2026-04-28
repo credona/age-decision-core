@@ -1,0 +1,8 @@
+repos:
+  - repo: local
+    hooks:
+      - id: age-decision-core-fix
+        name: age-decision-core-fix
+        entry: ./scripts/ci/fix_all_docker.sh
+        language: system
+        pass_filenames: false

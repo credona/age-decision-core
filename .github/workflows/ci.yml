@@ -14,103 +14,69 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
-      - name: Install tools
+      - name: Install quality tools
         run: |
           python -m pip install --upgrade pip
           pip install ruff
 
-      - name: Ruff lint
-        run: ruff check .
-
-      - name: Ruff format check
-        run: ruff format --check .
-
-      - name: Check trailing whitespace
+      - name: Run quality checks
         run: |
-          if grep -rIn "[[:blank:]]$" app tests scripts docs README.md CHANGELOG.md CONTRIBUTING.md; then
-            echo "Trailing whitespace found"
-            exit 1
-          fi
+          ruff check .
+          ruff format --check .
+          python -m compileall app tests scripts
 
-      - name: Check final newline
-        run: |
-          FAILED=0
-
-          for file in $(find app tests scripts docs -type f \( -name "*.py" -o -name "*.md" -o -name "*.sh" \)); do
-            if [ -s "$file" ]; then
-              if [ "$(tail -c1 "$file")" != "" ]; then
-                echo "Missing final newline: $file"
-                FAILED=1
-              fi
-            fi
-          done
-
-          for file in README.md CHANGELOG.md CONTRIBUTING.md pyproject.toml project.json compatibility.json; do
-            if [ -f "$file" ] && [ -s "$file" ]; then
-              if [ "$(tail -c1 "$file")" != "" ]; then
-                echo "Missing final newline: $file"
-                FAILED=1
-              fi
-            fi
-          done
-
-          exit $FAILED
-
-      - name: Compile Python files
-        run: python -m compileall app tests scripts
+      - name: Check whitespace and final newlines
+        run: ./scripts/ci/check_all.sh
 
   metadata:
     name: Metadata and generated docs
     runs-on: ubuntu-latest
-    needs: [quality]
 
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
-      - name: Check project metadata
-        run: python scripts/metadata/check_project_metadata.py
+      - name: Sync compatibility metadata
+        run: |
+          python scripts/metadata/sync_compatibility_metadata.py
+          git diff --exit-code compatibility.json
 
-      - name: Check compatibility metadata
-        run: python scripts/metadata/check_compatibility_metadata.py
+      - name: Check metadata
+        run: |
+          python scripts/metadata/check_project_metadata.py
+          python scripts/metadata/check_compatibility_metadata.py
+          python scripts/metadata/check_docker_metadata.py
 
-      - name: Check generated README examples
+      - name: Check generated documentation
         run: |
           python scripts/docs/update_readme_examples.py
           git diff --exit-code README.md
 
-      - name: Check generated usage examples
-        run: |
           python scripts/docs/update_docs_usage.py
           git diff --exit-code docs/usage.md
 
-      - name: Check generated compatibility documentation
-        run: |
           python scripts/docs/update_docs_compatibility.py
           git diff --exit-code docs/compatibility.md
 
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    needs: [metadata]
 
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: Install system dependencies
         run: |
@@ -121,6 +87,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements.dev.txt
 
       - name: Download model files
         run: python scripts/models/download_models.py
@@ -128,50 +95,40 @@ jobs:
       - name: Run tests
         run: pytest
 
-  compatibility:
-    name: Contract compatibility
-    runs-on: ubuntu-latest
-    needs: [tests]
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libglib2.0-0 libgl1
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Download model files
-        run: python scripts/models/download_models.py
-
-      - name: Run contract tests
-        run: pytest tests/unit/contract
-
-      - name: Run privacy and proof tests
-        run: |
-          pytest tests/unit/domain/test_privacy.py
-          pytest tests/unit/domain/test_proof.py
-          pytest tests/integration/test_privacy_response.py
-
   docker-runtime:
     name: Docker runtime
     runs-on: ubuntu-latest
-    needs: [compatibility]
 
     steps:
       - uses: actions/checkout@v6
 
+      - name: Generate Docker build metadata
+        id: project
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          data = json.load(open("project.json"))
+          docker = data["docker"]["prod"]
+
+          print(f"version={data['version']}")
+          print(f"repository={data['repository']}")
+          print(f"license={data['license']}")
+          print(f"dockerfile={docker['dockerfile']}")
+          print(f"image={docker['image']}")
+          print(f"title={docker['title']}")
+          print(f"description={docker['description']}")
+          PY
+
       - name: Build Docker image
-        run: docker build -t age-decision-core:ci .
+        run: |
+          docker build \
+            -f "${{ steps.project.outputs.dockerfile }}" \
+            --build-arg VERSION="${{ steps.project.outputs.version }}" \
+            --build-arg REPOSITORY="${{ steps.project.outputs.repository }}" \
+            --build-arg TITLE="${{ steps.project.outputs.title }}" \
+            --build-arg DESCRIPTION="${{ steps.project.outputs.description }}" \
+            --build-arg LICENSE="${{ steps.project.outputs.license }}" \
+            -t age-decision-core:ci .
 
       - name: Create model volume
         run: docker volume create core-models-ci
@@ -182,18 +139,6 @@ jobs:
             -v core-models-ci:/app/models \
             age-decision-core:ci \
             python scripts/models/download_models.py
-
-      - name: Verify models exist in volume
-        run: |
-          docker run --rm \
-            -v core-models-ci:/app/models \
-            age-decision-core:ci \
-            test -f /app/models/face_detection/face_detection_yunet_2023mar.onnx
-
-          docker run --rm \
-            -v core-models-ci:/app/models \
-            age-decision-core:ci \
-            test -f /app/models/age_estimation/age-gender-prediction-ONNX.onnx
 
       - name: Run Docker container
         run: |
@@ -215,7 +160,6 @@ jobs:
             sleep 2
           done
 
-          echo "Service did not become ready"
           docker logs age-decision-core || true
           docker ps -a
           exit 1
@@ -235,23 +179,25 @@ jobs:
   auto-tag:
     name: Automatic release tag
     runs-on: ubuntu-latest
-    needs: [docker-runtime]
+    needs:
+      - quality
+      - metadata
+      - tests
+      - docker-runtime
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     permissions:
       contents: read
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: Create tag from project metadata
         env:

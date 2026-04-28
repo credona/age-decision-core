@@ -4,42 +4,42 @@ set -euo pipefail
 ruff check .
 ruff format --check .
 
-if grep -rIn "[[:blank:]]$" app tests scripts docs README.md CHANGELOG.md CONTRIBUTING.md; then
-  echo "Trailing whitespace found"
-  exit 1
-fi
-
 FAILED=0
 
-for file in $(find app tests scripts docs -type f \( -name "*.py" -o -name "*.md" -o -name "*.sh" \)); do
+if grep -rIn "[[:blank:]]$" app tests scripts docs README.md CHANGELOG.md CONTRIBUTING.md 2>/dev/null; then
+  echo "Trailing whitespace found"
+  FAILED=1
+fi
+
+for file in $(find app tests scripts docs -type f \( -name "*.py" -o -name "*.md" -o -name "*.sh" \) 2>/dev/null); do
   if [ -s "$file" ] && [ "$(tail -c1 "$file")" != "" ]; then
     echo "Missing final newline: $file"
     FAILED=1
   fi
 done
 
-for file in README.md CHANGELOG.md CONTRIBUTING.md pyproject.toml project.json compatibility.json; do
+for file in README.md CHANGELOG.md CONTRIBUTING.md pyproject.toml project.json compatibility.json Dockerfile Dockerfile.dev docker-compose.dev.yml; do
   if [ -f "$file" ] && [ -s "$file" ] && [ "$(tail -c1 "$file")" != "" ]; then
     echo "Missing final newline: $file"
     FAILED=1
   fi
 done
 
-exit "$FAILED"
+if [ "$FAILED" -ne 0 ]; then
+  exit "$FAILED"
+fi
 
 python -m compileall app tests scripts
+
+python scripts/metadata/sync_compatibility_metadata.py
 python scripts/metadata/check_project_metadata.py
 python scripts/metadata/check_compatibility_metadata.py
-python scripts/docs/update_readme_examples.py
-git diff --exit-code README.md
-python scripts/docs/update_docs_usage.py
-git diff --exit-code docs/usage.md
-python scripts/docs/update_docs_compatibility.py
-git diff --exit-code docs/compatibility.md
+python scripts/metadata/check_docker_metadata.py
+
+./scripts/ci/assert_file_unchanged.sh README.md python scripts/docs/update_readme_examples.py
+./scripts/ci/assert_file_unchanged.sh docs/usage.md python scripts/docs/update_docs_usage.py
+./scripts/ci/assert_file_unchanged.sh docs/compatibility.md python scripts/docs/update_docs_compatibility.py
+
 pytest
-pytest tests/unit/contract
-pytest tests/unit/domain/test_privacy.py
-pytest tests/unit/domain/test_proof.py
-pytest tests/integration/test_privacy_response.py
 
 echo "CI-equivalent check passed."

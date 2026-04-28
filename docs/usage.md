@@ -1,184 +1,61 @@
-<h1>Age Decision Core Usage</h1>
+<h1>Usage</h1>
 
-This document describes how to run and use the Core service.
+This document describes how to run and use Age Decision Core.
 
-For global project concepts, see:
+<hr>
 
-```text
-https://github.com/credona/age-decision
+<h2>Contributor usage</h2>
+
+Start the development environment:
+
+```bash
+./scripts/docker/dev.sh
+```
+
+Download models:
+
+```bash
+docker compose --env-file .generated/compose/dev.env -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
+```
+
+Stop the environment:
+
+```bash
+docker compose --env-file .generated/compose/dev.env -f docker-compose.dev.yml down
 ```
 
 <hr>
 
-<h2>Environment</h2>
-
-Create a local environment file:
-
-```bash
-cp .env.example .env
-```
-
-Example:
-
-```env
-FACE_DETECTION_MODEL_PATH=models/face_detection/face_detection_yunet_2023mar.onnx
-AGE_MODEL_PATH=models/age_estimation/age-gender-prediction-ONNX.onnx
-
-USE_MOCK_MODEL=false
-DEFAULT_AGE_CONFIDENCE=0.8
-
-AGE_THRESHOLD=18
-AGE_MARGIN=2
-CONFIDENCE_THRESHOLD=0.7
-
-PRIVACY_MODE=true
-ENABLE_ZK_READY=true
-
-LOG_LEVEL=INFO
-LOG_FORMAT=json
-```
-
-`AGE_MARGIN` and `CONFIDENCE_THRESHOLD` are internal decision policy parameters.
-
-They are not exposed in the public response.
-
-Project identity metadata is stored in:
-
-```text
-project.json
-```
-
-Runtime environment files must not override:
-
-```text
-service_name
-app_name
-version
-contract_version
-```
-
-<hr>
-
-<h2>Model setup</h2>
-
-Download model files locally:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
-```
-
-Expected files:
-
-```text
-models/face_detection/face_detection_yunet_2023mar.onnx
-models/age_estimation/age-gender-prediction-ONNX.onnx
-```
-
-Model binaries are not intended to be committed to Git.
-
-Model binaries are not intended to be embedded in the public Docker image by default.
-
-<hr>
-
-<h2>Run with Docker Compose</h2>
-
-```bash
-docker compose -f docker-compose.dev.yml down -v
-docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
-```
-
-View logs:
-
-```bash
-docker compose -f docker-compose.dev.yml logs -f age-decision-core
-```
-
-Stop the service:
-
-```bash
-docker compose -f docker-compose.dev.yml down -v
-```
-
-<hr>
-
-<h2>Developer workflow</h2>
-
-Run the complete local validation command:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/check_local.sh
-```
-
-Update all generated files:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/update_all.sh
-```
-
-Prepare a release locally:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core scripts/ci/release_prepare.sh
-```
-
-<hr>
-
-<h2>Run the public Docker image</h2>
-
-Download models locally first:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
-```
-
-Run the image with mounted models:
-
-```bash
-docker run --rm \
-  -p 8000:8000 \
-  -v "$PWD/models:/app/models" \
-  ghcr.io/credona/age-decision-core:latest
-```
-
-<hr>
-
-<h2>Health</h2>
+<h2>Health checks</h2>
 
 ```bash
 curl -i http://localhost:8000/health
+curl -i http://localhost:8000/version
+curl -i http://localhost:8000/model/status
 ```
 
-Example response:
+Expected health response:
 
 <!-- BEGIN:HEALTH_RESPONSE -->
 ```json
 {
   "status": "ok",
   "service": "age-decision-core",
-  "version": "2.2.0",
-  "contract_version": "2.0"
+  "version": "2.2.1",
+  "contract_version": "2.2"
 }
 ```
 <!-- END:HEALTH_RESPONSE -->
 
-<hr>
-
-<h2>Version</h2>
-
-```bash
-curl -i http://localhost:8000/version
-```
-
-Example response:
+Expected version response:
 
 <!-- BEGIN:VERSION_RESPONSE -->
 ```json
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.2.0",
-  "contract_version": "2.0",
+  "version": "2.2.1",
+  "contract_version": "2.2",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
 }
@@ -187,43 +64,7 @@ Example response:
 
 <hr>
 
-<h2>Model status</h2>
-
-```bash
-curl -i http://localhost:8000/model/status
-```
-
-Example response:
-
-```json
-{
-  "face_detection": {
-    "model": "YuNet",
-    "model_path": "models/face_detection/face_detection_yunet_2023mar.onnx",
-    "loaded": true
-  },
-  "age_estimation": {
-    "mode": "onnx",
-    "use_mock_model": false,
-    "model_path": "models/age_estimation/age-gender-prediction-ONNX.onnx",
-    "model_loaded": true,
-    "age_output_supported": true
-  }
-}
-```
-
-<hr>
-
-<h2>Estimate</h2>
-
-Basic request using the default threshold:
-
-```bash
-curl -X POST http://localhost:8000/estimate \
-  -F "file=@./test-face.jpg"
-```
-
-With request tracing and majority country:
+<h2>Run an age decision</h2>
 
 ```bash
 curl -X POST "http://localhost:8000/estimate?majority_country=FR" \
@@ -232,154 +73,82 @@ curl -X POST "http://localhost:8000/estimate?majority_country=FR" \
   -F "file=@./test-face.jpg"
 ```
 
-With explicit threshold:
+<hr>
+
+<h2>Runtime configuration</h2>
+
+Default runtime values are declared in `project.json`.
+
+Generated runtime files are written to:
+
+```text
+.generated/runtime/
+```
+
+Generated Compose files are written to:
+
+```text
+.generated/compose/
+```
+
+Do not edit generated files manually.
+
+Regenerate them with:
 
 ```bash
-curl -X POST "http://localhost:8000/estimate?age_threshold=21" \
-  -F "file=@./test-face.jpg"
-```
-
-Threshold resolution order:
-
-```text
-age_threshold > majority_country > default threshold
+./scripts/config/generate_env.sh dev
 ```
 
 <hr>
 
-<h2>Successful response shape</h2>
+<h2>External Docker usage</h2>
 
-```json
-{
-  "request_id": "test-request-001",
-  "correlation_id": "test-correlation-001",
-  "decision": "match",
-  "threshold": {
-    "type": "minimum_age",
-    "value": 18,
-    "source": "majority_country",
-    "majority_country": "FR"
-  },
-  "face_detected": true,
-  "face_count": 1,
-  "spoof_check_required": true,
-  "spoof_check": {
-    "status": "required",
-    "passed": null,
-    "provider": null
-  },
-  "cred_decision_score": {
-    "score": 0.86,
-    "level": "high",
-    "factors": {
-      "model_confidence": "medium",
-      "threshold_separation": "high"
-    }
-  },
-  "privacy": {
-    "image_stored": false,
-    "biometric_template_stored": false,
-    "estimated_age_exposed": false,
-    "processing": "ephemeral",
-    "zk_ready": true
-  },
-  "proof": {
-    "type": "zk-ready",
-    "status": "not_generated",
-    "claim": "age_over_threshold",
-    "threshold": {
-      "type": "minimum_age",
-      "value": 18,
-      "source": "majority_country",
-      "majority_country": "FR"
-    }
-  },
-  "rejection_reason": null,
-  "model_info": {
-    "face_detector": "YuNet",
-    "age_estimator": "age-gender-prediction-ONNX",
-    "age_model_path": "models/age_estimation/age-gender-prediction-ONNX.onnx",
-    "face_detection_model_path": "models/face_detection/face_detection_yunet_2023mar.onnx"
-  }
-}
+Run from the published image:
+
+```bash
+docker run --rm \
+  -p 8000:8000 \
+  -v "$PWD/models:/app/models" \
+  ghcr.io/credona/age-decision-core:latest
+```
+
+Override runtime values:
+
+```bash
+docker run --rm \
+  -p 8000:8000 \
+  -e AGE_THRESHOLD=21 \
+  -e CONFIDENCE_THRESHOLD=0.9 \
+  -v "$PWD/models:/app/models" \
+  ghcr.io/credona/age-decision-core:latest
 ```
 
 <hr>
 
-<h2>Public privacy contract</h2>
+<h2>Validation</h2>
 
-The public response does not expose:
+Run the full auto-fix and validation pipeline:
 
-- estimated age
-- raw model confidence
-- threshold distance
-- internal uncertainty margin
-- internal confidence threshold
-- legacy `cred_score` alias
-
-<hr>
-
-<h2>Decision values</h2>
-
-```text
-match
-no_match
-uncertain
+```bash
+./scripts/ci/fix_all_docker.sh
 ```
 
-<hr>
+Run validation only:
 
-<h2>Rejection reasons</h2>
-
-```text
-low_confidence
-threshold_uncertain
-no_face
-multiple_faces
-null
+```bash
+./scripts/ci/check_all_docker.sh
 ```
-
-<hr>
-
-<h2>Majority country rules</h2>
-
-`majority_country` uses ISO 3166-1 alpha-2 country codes to resolve a default minimum age threshold.
-
-Examples:
-
-```text
-FR -> 18
-US -> 21
-DE -> 18
-ES -> 18
-IT -> 18
-UK -> 18
-CA -> 18
-AU -> 18
-KR -> 19
-JP -> 18
-```
-
-Unknown majority countries fall back to the configured default threshold.
 
 <hr>
 
 <h2>Compatibility metadata</h2>
 
-Compatibility metadata is declared in:
-
-```text
-compatibility.json
-```
-
-Generated view:
-
 <!-- BEGIN:COMPATIBILITY_METADATA -->
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.2.0",
-  "contract_version": "2.0",
+  "version": "2.2.1",
+  "contract_version": "2.2",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"
@@ -398,3 +167,13 @@ Generated view:
 }
 ```
 <!-- END:COMPATIBILITY_METADATA -->
+
+<hr>
+
+<h2>Notes</h2>
+
+Age Decision Core returns a probabilistic threshold decision.
+
+It does not expose estimated age.
+
+It does not perform identity verification, face recognition, document verification, or legal age proof.
