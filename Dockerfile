@@ -17,6 +17,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY app ./app
 COPY scripts ./scripts
+COPY pyproject.toml .
+COPY project.json .
+COPY compatibility.json .
 COPY pytest.ini ./pytest.ini
 
 EXPOSE 8000
