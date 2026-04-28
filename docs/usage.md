@@ -356,7 +356,7 @@ Generated view:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "contract_version": "2.0",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
