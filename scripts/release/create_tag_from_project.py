@@ -9,10 +9,15 @@ PROJECT_FILE = Path("project.json")
 def run(command: list[str]) -> str:
     result = subprocess.run(
         command,
-        check=True,
         text=True,
         capture_output=True,
     )
+
+    if result.returncode != 0:
+        print(result.stdout)
+        print(result.stderr)
+        raise SystemExit(f"Command failed: {' '.join(command)}")
+
     return result.stdout.strip()
 
 
