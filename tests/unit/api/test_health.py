@@ -5,4 +5,6 @@ def test_health_returns_ok(client):
     assert response.json() == {
         "status": "ok",
         "service": "age-decision-core",
+        "version": "2.1.0",
+        "contract_version": "2.0",
     }

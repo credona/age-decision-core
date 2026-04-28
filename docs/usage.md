@@ -42,6 +42,21 @@ LOG_FORMAT=json
 
 They are not exposed in the public response.
 
+Project identity metadata is stored in:
+
+```text
+project.json
+```
+
+Runtime environment files must not override:
+
+```text
+service_name
+app_name
+version
+contract_version
+```
+
 <hr>
 
 <h2>Model setup</h2>
@@ -114,12 +129,39 @@ curl -i http://localhost:8000/health
 
 Example response:
 
+<!-- BEGIN:HEALTH_RESPONSE -->
 ```json
 {
   "status": "ok",
-  "service": "age-decision-core"
+  "service": "age-decision-core",
+  "version": "2.1.0",
+  "contract_version": "2.0"
 }
 ```
+<!-- END:HEALTH_RESPONSE -->
+
+<hr>
+
+<h2>Version</h2>
+
+```bash
+curl -i http://localhost:8000/version
+```
+
+Example response:
+
+<!-- BEGIN:VERSION_RESPONSE -->
+```json
+{
+  "service_name": "age-decision-core",
+  "app_name": "Age Decision Core",
+  "version": "2.1.0",
+  "contract_version": "2.0",
+  "repository": "https://github.com/credona/age-decision-core",
+  "image": "ghcr.io/credona/age-decision-core"
+}
+```
+<!-- END:VERSION_RESPONSE -->
 
 <hr>
 
@@ -297,3 +339,40 @@ JP -> 18
 ```
 
 Unknown majority countries fall back to the configured default threshold.
+
+<hr>
+
+<h2>Compatibility metadata</h2>
+
+Compatibility metadata is declared in:
+
+```text
+compatibility.json
+```
+
+Generated view:
+
+<!-- BEGIN:COMPATIBILITY_METADATA -->
+```json
+{
+  "service": "age-decision-core",
+  "version": "2.1.0",
+  "contract_version": "2.0",
+  "compatible_with": {
+    "age-decision-api": ">=2.0.0 <3.0.0",
+    "age-decision-js": ">=2.0.0 <3.0.0"
+  },
+  "public_contract": {
+    "decision_values": [
+      "match",
+      "no_match",
+      "uncertain"
+    ],
+    "score_field": "cred_decision_score",
+    "estimated_age_exposed": false,
+    "raw_confidence_exposed": false,
+    "legacy_cred_score_exposed": false
+  }
+}
+```
+<!-- END:COMPATIBILITY_METADATA -->

@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 
 from app.api.routes import router
-from app.config import settings
+from app.project import project_metadata
 
 app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
+    title=project_metadata.app_name,
+    version=project_metadata.version,
 )
 
 app.include_router(router)

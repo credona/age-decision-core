@@ -1,8 +1,9 @@
 from uuid import uuid4
 
-from fastapi import APIRouter, UploadFile, File, Query, Header
+from fastapi import APIRouter, File, Header, Query, UploadFile
 from fastapi.responses import JSONResponse
 
+from app.project import project_metadata
 from app.schemas.error import ErrorResponse
 from app.schemas.estimate import AgeDecisionResponse
 from app.services.age_estimation_service import AgeEstimationService
@@ -16,7 +17,17 @@ logger = get_logger("age_decision_api")
 
 @router.get("/health")
 def health():
-    return {"status": "ok", "service": "age-decision-core"}
+    return {
+        "status": "ok",
+        "service": project_metadata.service_name,
+        "version": project_metadata.version,
+        "contract_version": project_metadata.contract_version,
+    }
+
+
+@router.get("/version")
+def version():
+    return project_metadata.model_dump()
 
 
 @router.get("/model/status")

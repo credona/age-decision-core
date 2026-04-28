@@ -1,5 +1,6 @@
-import time
 import statistics
+import time
+
 import requests
 
 URL = "http://localhost:8000/estimate"

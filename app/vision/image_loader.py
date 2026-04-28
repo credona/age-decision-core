@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 def load_image_from_bytes(image_bytes: bytes):

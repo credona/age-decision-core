@@ -1,8 +1,9 @@
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.config import settings
+from app.project import project_metadata
 
 
 def get_logger(name: str = "age_decision") -> logging.Logger:
@@ -34,9 +35,10 @@ def log_event(logger: logging.Logger, event: dict) -> None:
     should ever be logged.
     """
     payload = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "service": settings.service_name,
-        "version": settings.app_version,
+        "timestamp": datetime.now(UTC).isoformat(),
+        "service": project_metadata.service_name,
+        "version": project_metadata.version,
+        "contract_version": project_metadata.contract_version,
         **event,
     }
 

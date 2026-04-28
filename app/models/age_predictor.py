@@ -61,9 +61,7 @@ class AgePredictor:
             return 25.0, settings.default_age_confidence
 
         if not self._has_supported_age_output():
-            raise RuntimeError(
-                "Configured ONNX model does not expose a supported age output."
-            )
+            raise RuntimeError("Configured ONNX model does not expose a supported age output.")
 
         return self._onnx_prediction(face_tensor)
 

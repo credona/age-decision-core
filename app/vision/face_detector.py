@@ -1,4 +1,5 @@
 import os
+
 import cv2
 
 from app.config import settings
@@ -42,12 +43,14 @@ class FaceDetector:
         for face in faces:
             x, y, w, h = face[:4]
 
-            boxes.append((
-                max(0, int(x)),
-                max(0, int(y)),
-                int(w),
-                int(h),
-            ))
+            boxes.append(
+                (
+                    max(0, int(x)),
+                    max(0, int(y)),
+                    int(w),
+                    int(h),
+                )
+            )
 
         return boxes
 

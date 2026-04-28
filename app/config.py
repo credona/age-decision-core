@@ -7,10 +7,6 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "Age Decision Core"
-    app_version: str = "2.0.0"
-    service_name: str = "age-decision-core"
-
     core_port: int = 8000
 
     face_detection_model_path: str = "models/face_detection/face_detection_yunet_2023mar.onnx"

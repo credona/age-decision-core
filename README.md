@@ -20,9 +20,11 @@ It does not perform identity verification, face recognition, document verificati
 
 <h2>Documentation</h2>
 
+- Repository: https://github.com/credona/age-decision-core
 - Usage: docs/usage.md
 - Models and third-party notices: docs/models.md
 - Benchmarks: docs/benchmarks.md
+- Compatibility: docs/compatibility.md
 - Changelog: CHANGELOG.md
 - Contributing: CONTRIBUTING.md
 - Global project: https://github.com/credona/age-decision
@@ -42,8 +44,37 @@ Check the service:
 
 ```bash
 curl -i http://localhost:8000/health
+curl -i http://localhost:8000/version
 curl -i http://localhost:8000/model/status
 ```
+
+Expected health response:
+
+<!-- BEGIN:HEALTH_RESPONSE -->
+```json
+{
+  "status": "ok",
+  "service": "age-decision-core",
+  "version": "2.1.0",
+  "contract_version": "2.0"
+}
+```
+<!-- END:HEALTH_RESPONSE -->
+
+Expected version response:
+
+<!-- BEGIN:VERSION_RESPONSE -->
+```json
+{
+  "service_name": "age-decision-core",
+  "app_name": "Age Decision Core",
+  "version": "2.1.0",
+  "contract_version": "2.0",
+  "repository": "https://github.com/credona/age-decision-core",
+  "image": "ghcr.io/credona/age-decision-core"
+}
+```
+<!-- END:VERSION_RESPONSE -->
 
 Run an age decision:
 
@@ -114,6 +145,82 @@ The public response does not expose:
 - raw model confidence
 - threshold distance
 - legacy `cred_score` alias
+
+For compatibility rules, see:
+
+```text
+docs/compatibility.md
+```
+
+<hr>
+
+<h2>Compatibility metadata</h2>
+
+Compatibility metadata is declared in `compatibility.json` and checked by CI.
+
+<!-- BEGIN:COMPATIBILITY_METADATA -->
+```json
+{
+  "service": "age-decision-core",
+  "version": "2.1.0",
+  "contract_version": "2.0",
+  "compatible_with": {
+    "age-decision-api": ">=2.0.0 <3.0.0",
+    "age-decision-js": ">=2.0.0 <3.0.0"
+  },
+  "public_contract": {
+    "decision_values": [
+      "match",
+      "no_match",
+      "uncertain"
+    ],
+    "score_field": "cred_decision_score",
+    "estimated_age_exposed": false,
+    "raw_confidence_exposed": false,
+    "legacy_cred_score_exposed": false
+  }
+}
+```
+<!-- END:COMPATIBILITY_METADATA -->
+
+<hr>
+
+<h2>Quality and compatibility checks</h2>
+
+Run tests:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core pytest
+```
+
+Run contract tests:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core pytest tests/unit/contract
+```
+
+Run quality checks:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core ruff check .
+docker compose -f docker-compose.dev.yml exec age-decision-core ruff format --check .
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/check_project_metadata.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/check_compatibility_metadata.py
+```
+
+Update generated documentation blocks:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_readme_examples.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_docs_usage.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_docs_compatibility.py
+```
+
+Compile Python files:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python -m compileall app tests scripts
+```
 
 <hr>
 
