@@ -6,6 +6,15 @@ Global project direction is tracked in the central Age Decision repository.
 
 <hr>
 
+<h2>2.1.1</h2>
+
+- Fixed corrupted CI workflow YAML after v2.1.0 merge.
+- Fixed Docker runtime readiness check for the Core service.
+- Removed model-dependent runtime check from the public Docker image validation.
+- Kept `/health` and `/version` as public Docker runtime checks.
+
+<hr>
+
 <h2>2.1.0</h2>
 
 - Added centralized project metadata through `project.json`.

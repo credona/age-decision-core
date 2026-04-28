@@ -57,7 +57,7 @@ Generated view:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "contract_version": "2.0",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
@@ -83,7 +83,7 @@ Generated view:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "contract_version": "2.0",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
