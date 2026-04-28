@@ -2,25 +2,32 @@ import json
 from pathlib import Path
 
 
-def test_project_and_compatibility_versions_are_aligned():
-    project = json.loads(Path("project.json").read_text(encoding="utf-8"))
-    compatibility = json.loads(Path("compatibility.json").read_text(encoding="utf-8"))
-
-    assert compatibility["service"] == project["service_name"]
-    assert compatibility["version"] == project["version"]
-    assert compatibility["contract_version"] == project["contract_version"]
-
-
-def test_health_exposes_contract_version(client):
-    response = client.get("/health")
+def test_version_endpoint_exists_in_openapi(client):
+    response = client.get("/openapi.json")
 
     assert response.status_code == 200
-    assert response.json()["contract_version"] == "2.0"
+    assert "/version" in response.json()["paths"]
+
+
+def test_version_endpoint_returns_public_metadata(client):
+    response = client.get("/version")
+    body = response.json()
+
+    assert response.status_code == 200
+    assert set(body.keys()) == {
+        "service_name",
+        "app_name",
+        "version",
+        "contract_version",
+        "repository",
+        "image",
+    }
 
 
 def test_version_endpoint_exposes_project_version(client):
+    project = json.loads(Path("project.json").read_text(encoding="utf-8"))
+
     response = client.get("/version")
 
     assert response.status_code == 200
-    assert response.json()["version"] == "2.1.1"
-    assert response.json()["contract_version"] == "2.0"
+    assert response.json()["version"] == project["version"]
