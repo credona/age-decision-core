@@ -239,14 +239,13 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.AGE_DECISION_RELEASE_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v6

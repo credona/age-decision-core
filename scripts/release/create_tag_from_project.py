@@ -44,16 +44,21 @@ def main() -> None:
     token = os.getenv("AGE_DECISION_RELEASE_TOKEN")
     repository = os.getenv("GITHUB_REPOSITORY")
 
-    if token and repository:
-        run(
-            [
-                "git",
-                "remote",
-                "set-url",
-                "origin",
-                f"https://x-access-token:{token}@github.com/{repository}.git",
-            ]
-        )
+    if not token:
+        raise SystemExit("Missing AGE_DECISION_RELEASE_TOKEN secret.")
+
+    if not repository:
+        raise SystemExit("Missing GITHUB_REPOSITORY environment variable.")
+
+    run(
+        [
+            "git",
+            "remote",
+            "set-url",
+            "origin",
+            f"https://x-access-token:{token}@github.com/{repository}.git",
+        ]
+    )
 
     run(["git", "config", "user.name", "github-actions[bot]"])
     run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"])
