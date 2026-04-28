@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -19,6 +20,10 @@ def run(command: list[str]) -> str:
         raise SystemExit(f"Command failed: {' '.join(command)}")
 
     return result.stdout.strip()
+
+
+def normalize_secret(value: str | None) -> str:
+    return re.sub(r"\s+", "", value or "")
 
 
 def main() -> None:
@@ -46,7 +51,7 @@ def main() -> None:
         print(f"Tag already exists remotely: {tag}")
         return
 
-    token = (os.getenv("AGE_DECISION_RELEASE_TOKEN") or "").strip()
+    token = normalize_secret(os.getenv("AGE_DECISION_RELEASE_TOKEN"))
     repository = (os.getenv("GITHUB_REPOSITORY") or "").strip()
 
     if not token:
