@@ -16,6 +16,7 @@ Global project direction is tracked in the central Age Decision repository.
   <li>Added automatic documentation synchronization checks.</li>
   <li>Added one-command auto-fix pipeline (fix_all_docker.sh).</li>
   <li>Added one-command CI-equivalent validation (check_all_docker.sh).</li>
+  <li>Added Docker-first local CI execution.</li>
   <li>Added file consistency checks independent of Git context.</li>
   <li>Added pre-push validation hook aligned with CI.</li>
   <li>Simplified developer workflow and reduced command surface.</li>
