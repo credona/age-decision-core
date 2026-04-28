@@ -20,13 +20,11 @@ This document applies to the public behavior of this repository:
 - project metadata
 - compatibility metadata
 
-Internal implementation details are not considered stable unless explicitly documented.
+Internal implementation details are not stable unless explicitly documented.
 
 <hr>
 
 <h2>Stable public endpoints</h2>
-
-The following endpoints are part of the public service contract:
 
 ```text
 GET /health
@@ -57,8 +55,8 @@ Generated view:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.2.0",
-  "contract_version": "2.0",
+  "version": "2.2.1",
+  "contract_version": "2.2",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
 }
@@ -77,14 +75,16 @@ Compatibility metadata is stored in:
 compatibility.json
 ```
 
+It is synchronized from `project.json`.
+
 Generated view:
 
 <!-- BEGIN:COMPATIBILITY_METADATA -->
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.2.0",
-  "contract_version": "2.0",
+  "version": "2.2.1",
+  "contract_version": "2.2",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"
@@ -104,15 +104,11 @@ Generated view:
 ```
 <!-- END:COMPATIBILITY_METADATA -->
 
-This file is machine-readable and checked by CI.
-
-It is not a replacement for cross-repository integration tests.
-
 <hr>
 
 <h2>Stable public fields</h2>
 
-The main estimate response exposes the following public fields:
+The main estimate response exposes:
 
 ```text
 decision
@@ -130,8 +126,6 @@ These fields should remain stable throughout the v2.x release line.
 <hr>
 
 <h2>Decision values</h2>
-
-The public decision field uses:
 
 ```text
 match
@@ -152,8 +146,6 @@ Age Decision Core owns:
 ```text
 cred_decision_score
 ```
-
-This score represents the confidence of the threshold decision produced by Core.
 
 Core does not own:
 
@@ -179,22 +171,11 @@ raw image data
 legacy cred_score alias
 ```
 
-This rule protects downstream integrations from depending on sensitive or unstable internals.
-
 <hr>
 
 <h2>Proof-ready metadata</h2>
 
 The proof metadata is proof-ready, not proof-generating.
-
-It may describe:
-
-```text
-claim type
-threshold
-proof status
-proof readiness
-```
 
 It must not claim to provide a real cryptographic Zero Knowledge proof unless such proof generation is implemented and verified.
 
@@ -234,22 +215,6 @@ Breaking changes should be reserved for a new major version.
 
 <hr>
 
-<h2>Deprecated fields</h2>
-
-Age Decision Core v2.x does not expose the legacy field:
-
-```text
-cred_score
-```
-
-New integrations must use:
-
-```text
-cred_decision_score
-```
-
-<hr>
-
 <h2>Compatibility checks</h2>
 
 Compatibility is checked through:
@@ -260,32 +225,21 @@ Compatibility is checked through:
 - proof metadata tests
 - project metadata checks
 - compatibility metadata checks
-- Docker runtime checks
+- Docker metadata checks
 - release tag checks
 - generated documentation checks
 
-The compatibility workflow is a baseline for the v2.x release line.
+Run all checks:
 
-Cross-repository integration tests are tracked separately in the global roadmap.
-
-<hr>
-
-<h2>Release checks</h2>
-
-On tag release, CI verifies that the Git tag matches the version declared in `project.json`.
-
-Example:
-
-```text
-project.json version: 2.2.0
-expected Git tag: v2.2.0
+```bash
+./scripts/ci/check_all_docker.sh
 ```
 
-A mismatched tag must fail the release workflow.
+Auto-fix generated files and run checks:
 
-After the main CI succeeds, release automation may create the matching Git tag from `project.json`.
-
-The created tag triggers the release workflow and Docker image workflow.
+```bash
+./scripts/ci/fix_all_docker.sh
+```
 
 <hr>
 
@@ -299,21 +253,28 @@ VERSION_RESPONSE
 COMPATIBILITY_METADATA
 ```
 
-They are updated by:
+Do not edit generated blocks manually.
+
+Use:
 
 ```bash
-python scripts/docs/update_readme_examples.py
-python scripts/docs/update_docs_usage.py
-python scripts/docs/update_docs_compatibility.py
+./scripts/ci/fix_all_docker.sh
 ```
 
-Or with:
+<hr>
 
-```bash
-scripts/dev/update_all.sh
+<h2>Release checks</h2>
+
+On tag release, CI verifies that the Git tag matches the version declared in `project.json`.
+
+Example:
+
+```text
+project.json version: 2.2.1
+expected Git tag: v2.2.1
 ```
 
-CI fails if generated documentation is not synchronized.
+A mismatched tag must fail the release workflow.
 
 <hr>
 

@@ -1,8 +1,53 @@
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.2.0",
-  "contract_version": "2.0",
+  "version": "2.2.1",
+  "contract_version": "2.2",
   "repository": "https://github.com/credona/age-decision-core",
-  "image": "ghcr.io/credona/age-decision-core"
+  "image": "ghcr.io/credona/age-decision-core",
+  "license": "Apache-2.0",
+  "docker": {
+    "dev": {
+      "dockerfile": "Dockerfile.dev",
+      "image": "age-decision-core-dev",
+      "title": "Age Decision Core Dev",
+      "description": "Development image for the Age Decision Core service."
+    },
+    "prod": {
+      "dockerfile": "Dockerfile",
+      "image": "age-decision-core",
+      "title": "Age Decision Core",
+      "description": "Privacy-first age decision core service."
+    }
+  },
+  "runtime": {
+    "dev": {
+      "CORE_PORT": "8000",
+      "FACE_DETECTION_MODEL_PATH": "models/face_detection/face_detection_yunet_2023mar.onnx",
+      "AGE_MODEL_PATH": "models/age_estimation/age-gender-prediction-ONNX.onnx",
+      "USE_MOCK_MODEL": "false",
+      "DEFAULT_AGE_CONFIDENCE": "0.8",
+      "AGE_THRESHOLD": "18",
+      "AGE_MARGIN": "2",
+      "CONFIDENCE_THRESHOLD": "0.7",
+      "PRIVACY_MODE": "true",
+      "ENABLE_ZK_READY": "true",
+      "LOG_LEVEL": "INFO",
+      "LOG_FORMAT": "json"
+    },
+    "prod": {
+      "CORE_PORT": "8000",
+      "FACE_DETECTION_MODEL_PATH": "models/face_detection/face_detection_yunet_2023mar.onnx",
+      "AGE_MODEL_PATH": "models/age_estimation/age-gender-prediction-ONNX.onnx",
+      "USE_MOCK_MODEL": "false",
+      "DEFAULT_AGE_CONFIDENCE": "0.8",
+      "AGE_THRESHOLD": "18",
+      "AGE_MARGIN": "2",
+      "CONFIDENCE_THRESHOLD": "0.7",
+      "PRIVACY_MODE": "true",
+      "ENABLE_ZK_READY": "true",
+      "LOG_LEVEL": "INFO",
+      "LOG_FORMAT": "json"
+    }
+  }
 }

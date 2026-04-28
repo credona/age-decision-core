@@ -12,74 +12,76 @@ https://github.com/credona/age-decision/blob/main/CONTRIBUTING.md
 
 <h2>Local setup</h2>
 
+Start the development environment:
+
 ```bash
-cp .env.example .env
-docker compose -f docker-compose.dev.yml down -v
-docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
+./scripts/docker/dev.sh
+```
+
+Download model files:
+
+```bash
+docker compose --env-file .generated/compose/dev.env -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 ```
 
 <hr>
 
 <h2>Developer workflow</h2>
 
-Run the full local check:
+Auto-fix, regenerate generated files, run tests, then run the final check:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/check_local.sh
+./scripts/ci/fix_all_docker.sh
 ```
 
-Update generated files:
+Run validation only:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/update_all.sh
+./scripts/ci/check_all_docker.sh
 ```
 
-Prepare a release:
+Prepare a release locally:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core scripts/ci/release_prepare.sh
-```
-
-<hr>
-
-<h2>Run tests</h2>
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
-docker compose -f docker-compose.dev.yml exec age-decision-core pytest
+docker compose --env-file .generated/compose/dev.env -f docker-compose.dev.yml exec age-decision-core scripts/ci/release_prepare.sh
 ```
 
 <hr>
 
-<h2>Run quality checks</h2>
+<h2>Configuration policy</h2>
 
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core ruff check .
-docker compose -f docker-compose.dev.yml exec age-decision-core ruff format --check .
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/metadata/check_project_metadata.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/metadata/check_compatibility_metadata.py
+Project metadata is edited in:
+
+```text
+project.json
+```
+
+Generated files are written under:
+
+```text
+.generated/
+```
+
+Do not edit generated files manually.
+
+Do not duplicate the service name, application name, version, contract version, Docker image metadata, or default runtime values in environment files.
+
+Compatibility metadata is synchronized from `project.json`.
+
+Release tags must match the version declared in `project.json`.
+
+Example:
+
+```text
+project.json version: 2.2.1
+Git tag: v2.2.1
 ```
 
 <hr>
 
-<h2>Update generated documentation</h2>
+<h2>Generated documentation</h2>
 
 Some documentation blocks are generated from `project.json` and `compatibility.json`.
-
-Run:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/update_all.sh
-```
-
-Or run scripts individually:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_readme_examples.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_docs_usage.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_docs_compatibility.py
-```
 
 Generated blocks are delimited by comments such as:
 
@@ -89,6 +91,12 @@ Generated blocks are delimited by comments such as:
 ```
 
 Do not edit generated blocks manually.
+
+Use:
+
+```bash
+./scripts/ci/fix_all_docker.sh
+```
 
 <hr>
 
@@ -125,39 +133,6 @@ Model files must be downloaded explicitly through:
 
 ```text
 scripts/models/download_models.py
-```
-
-<hr>
-
-<h2>Project metadata policy</h2>
-
-Project identity metadata must be edited in:
-
-```text
-project.json
-```
-
-Compatibility metadata is generated from:
-
-```text
-project.json
-```
-
-using:
-
-```text
-scripts/docs/update_compatibility.py
-```
-
-Do not duplicate the service name, application name, version or contract version in environment files.
-
-Release tags must match the version declared in `project.json`.
-
-Example:
-
-```text
-project.json version: 2.2.0
-Git tag: v2.2.0
 ```
 
 <hr>
