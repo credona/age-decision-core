@@ -22,5 +22,5 @@ def test_version_endpoint_exposes_project_version(client):
     response = client.get("/version")
 
     assert response.status_code == 200
-    assert response.json()["version"] == "2.1.0"
+    assert response.json()["version"] == "2.1.1"
     assert response.json()["contract_version"] == "2.0"
