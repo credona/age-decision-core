@@ -31,8 +31,32 @@ jobs:
           ruff format --check .
           python -m compileall app tests scripts
 
-      - name: Check whitespace and final newlines
-        run: ./scripts/ci/check_all.sh
+      - name: Check trailing whitespace
+        run: |
+          if grep -rIn "[[:blank:]]$" app tests scripts docs README.md CHANGELOG.md CONTRIBUTING.md; then
+            echo "Trailing whitespace found"
+            exit 1
+          fi
+
+      - name: Check final newline
+        run: |
+          FAILED=0
+
+          for file in $(find app tests scripts docs -type f \( -name "*.py" -o -name "*.md" -o -name "*.sh" \)); do
+            if [ -s "$file" ] && [ "$(tail -c1 "$file")" != "" ]; then
+              echo "Missing final newline: $file"
+              FAILED=1
+            fi
+          done
+
+          for file in README.md CHANGELOG.md CONTRIBUTING.md pyproject.toml project.json compatibility.json Dockerfile Dockerfile.dev docker-compose.dev.yml; do
+            if [ -f "$file" ] && [ -s "$file" ] && [ "$(tail -c1 "$file")" != "" ]; then
+              echo "Missing final newline: $file"
+              FAILED=1
+            fi
+          done
+
+          exit "$FAILED"
 
   metadata:
     name: Metadata and generated docs
