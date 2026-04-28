@@ -163,57 +163,71 @@ jobs:
           pytest tests/integration/test_privacy_response.py
 
   docker-runtime:
-    name: Docker runtime
-    runs-on: ubuntu-latest
-    needs: [compatibility]
+      name: Docker runtime
+      runs-on: ubuntu-latest
+      needs: [compatibility]
 
-    steps:
-      - uses: actions/checkout@v6
+      steps:
+        - uses: actions/checkout@v6
 
-      - name: Build Docker image
-        run: docker build -t age-decision-antispoof:ci .
+        - name: Build Docker image
+          run: docker build -t age-decision-core:ci .
 
-      - name: Download model into Docker volume
-        run: |
-          docker volume create antispoof-models-ci
-          docker run --rm \
-            -v antispoof-models-ci:/app/antispoof/models \
-            age-decision-antispoof:ci \
-            python scripts/download_models.py
+        - name: Create model volume
+          run: docker volume create core-models-ci
 
-      - name: Run Docker container
-        run: |
-          docker run -d \
-            --name age-decision-antispoof \
-            -p 8001:8001 \
-            -v antispoof-models-ci:/app/antispoof/models \
-            age-decision-antispoof:ci
+        - name: Download models into volume
+          run: |
+            docker run --rm \
+              -v core-models-ci:/app/models \
+              age-decision-core:ci \
+              python scripts/download_models.py
 
-      - name: Wait for service
-        run: |
-          for i in {1..30}; do
-            if curl -fsS http://localhost:8001/health; then
-              exit 0
-            fi
+        - name: Verify models exist in volume
+          run: |
+            docker run --rm \
+              -v core-models-ci:/app/models \
+              age-decision-core:ci \
+              test -f /app/models/face_detection/face_detection_yunet_2023mar.onnx
 
-            echo "Waiting for age-decision-antispoof... attempt $i"
-            docker logs age-decision-antispoof || true
-            sleep 2
-          done
+            docker run --rm \
+              -v core-models-ci:/app/models \
+              age-decision-core:ci \
+              test -f /app/models/age_estimation/age-gender-prediction-ONNX.onnx
 
-          echo "Service did not become ready"
-          docker logs age-decision-antispoof || true
-          docker ps -a
-          exit 1
+        - name: Run Docker container
+          run: |
+            docker run -d \
+              --name age-decision-core \
+              -p 8000:8000 \
+              -v core-models-ci:/app/models \
+              age-decision-core:ci
 
-      - name: Check runtime endpoints
-        run: |
-          curl -fsS http://localhost:8001/health
-          curl -fsS http://localhost:8001/version
-          curl -fsS http://localhost:8001/model/status
+        - name: Wait for service
+          run: |
+            for i in {1..30}; do
+              if curl -fsS http://localhost:8000/health; then
+                exit 0
+              fi
 
-      - name: Cleanup Docker resources
-        if: always()
-        run: |
-          docker rm -f age-decision-antispoof || true
-          docker volume rm antispoof-models-ci || true
+              echo "Waiting for age-decision-core... attempt $i"
+              docker logs age-decision-core || true
+              sleep 2
+            done
+
+            echo "Service did not become ready"
+            docker logs age-decision-core || true
+            docker ps -a
+            exit 1
+
+        - name: Check runtime endpoints
+          run: |
+            curl -fsS http://localhost:8000/health
+            curl -fsS http://localhost:8000/version
+            curl -fsS http://localhost:8000/model/status
+
+        - name: Cleanup Docker resources
+          if: always()
+          run: |
+            docker rm -f age-decision-core || true
+            docker volume rm core-models-ci || true
