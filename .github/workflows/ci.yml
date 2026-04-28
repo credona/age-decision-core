@@ -44,7 +44,7 @@ jobs:
         run: |
           FAILED=0
 
-          for file in $(find app tests scripts docs -type f \( -name "*.py" -o -name "*.md" \)); do
+          for file in $(find app tests scripts docs -type f \( -name "*.py" -o -name "*.md" -o -name "*.sh" \)); do
             if [ -s "$file" ]; then
               if [ "$(tail -c1 "$file")" != "" ]; then
                 echo "Missing final newline: $file"
@@ -80,24 +80,24 @@ jobs:
           python-version: "3.11"
 
       - name: Check project metadata
-        run: python scripts/check_project_metadata.py
+        run: python scripts/metadata/check_project_metadata.py
 
       - name: Check compatibility metadata
-        run: python scripts/check_compatibility_metadata.py
+        run: python scripts/metadata/check_compatibility_metadata.py
 
       - name: Check generated README examples
         run: |
-          python scripts/update_readme_examples.py
+          python scripts/docs/update_readme_examples.py
           git diff --exit-code README.md
 
       - name: Check generated usage examples
         run: |
-          python scripts/update_docs_usage.py
+          python scripts/docs/update_docs_usage.py
           git diff --exit-code docs/usage.md
 
       - name: Check generated compatibility documentation
         run: |
-          python scripts/update_docs_compatibility.py
+          python scripts/docs/update_docs_compatibility.py
           git diff --exit-code docs/compatibility.md
 
   tests:
@@ -123,7 +123,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Download model files
-        run: python scripts/download_models.py
+        run: python scripts/models/download_models.py
 
       - name: Run tests
         run: pytest
@@ -151,7 +151,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Download model files
-        run: python scripts/download_models.py
+        run: python scripts/models/download_models.py
 
       - name: Run contract tests
         run: pytest tests/unit/contract
@@ -163,71 +163,94 @@ jobs:
           pytest tests/integration/test_privacy_response.py
 
   docker-runtime:
-      name: Docker runtime
-      runs-on: ubuntu-latest
-      needs: [compatibility]
+    name: Docker runtime
+    runs-on: ubuntu-latest
+    needs: [compatibility]
 
-      steps:
-        - uses: actions/checkout@v6
+    steps:
+      - uses: actions/checkout@v6
 
-        - name: Build Docker image
-          run: docker build -t age-decision-core:ci .
+      - name: Build Docker image
+        run: docker build -t age-decision-core:ci .
 
-        - name: Create model volume
-          run: docker volume create core-models-ci
+      - name: Create model volume
+        run: docker volume create core-models-ci
 
-        - name: Download models into volume
-          run: |
-            docker run --rm \
-              -v core-models-ci:/app/models \
-              age-decision-core:ci \
-              python scripts/download_models.py
+      - name: Download models into volume
+        run: |
+          docker run --rm \
+            -v core-models-ci:/app/models \
+            age-decision-core:ci \
+            python scripts/models/download_models.py
 
-        - name: Verify models exist in volume
-          run: |
-            docker run --rm \
-              -v core-models-ci:/app/models \
-              age-decision-core:ci \
-              test -f /app/models/face_detection/face_detection_yunet_2023mar.onnx
+      - name: Verify models exist in volume
+        run: |
+          docker run --rm \
+            -v core-models-ci:/app/models \
+            age-decision-core:ci \
+            test -f /app/models/face_detection/face_detection_yunet_2023mar.onnx
 
-            docker run --rm \
-              -v core-models-ci:/app/models \
-              age-decision-core:ci \
-              test -f /app/models/age_estimation/age-gender-prediction-ONNX.onnx
+          docker run --rm \
+            -v core-models-ci:/app/models \
+            age-decision-core:ci \
+            test -f /app/models/age_estimation/age-gender-prediction-ONNX.onnx
 
-        - name: Run Docker container
-          run: |
-            docker run -d \
-              --name age-decision-core \
-              -p 8000:8000 \
-              -v core-models-ci:/app/models \
-              age-decision-core:ci
+      - name: Run Docker container
+        run: |
+          docker run -d \
+            --name age-decision-core \
+            -p 8000:8000 \
+            -v core-models-ci:/app/models \
+            age-decision-core:ci
 
-        - name: Wait for service
-          run: |
-            for i in {1..30}; do
-              if curl -fsS http://localhost:8000/health; then
-                exit 0
-              fi
+      - name: Wait for service
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/health; then
+              exit 0
+            fi
 
-              echo "Waiting for age-decision-core... attempt $i"
-              docker logs age-decision-core || true
-              sleep 2
-            done
-
-            echo "Service did not become ready"
+            echo "Waiting for age-decision-core... attempt $i"
             docker logs age-decision-core || true
-            docker ps -a
-            exit 1
+            sleep 2
+          done
 
-        - name: Check runtime endpoints
-          run: |
-            curl -fsS http://localhost:8000/health
-            curl -fsS http://localhost:8000/version
-            curl -fsS http://localhost:8000/model/status
+          echo "Service did not become ready"
+          docker logs age-decision-core || true
+          docker ps -a
+          exit 1
 
-        - name: Cleanup Docker resources
-          if: always()
-          run: |
-            docker rm -f age-decision-core || true
-            docker volume rm core-models-ci || true
+      - name: Check runtime endpoints
+        run: |
+          curl -fsS http://localhost:8000/health
+          curl -fsS http://localhost:8000/version
+          curl -fsS http://localhost:8000/model/status
+
+      - name: Cleanup Docker resources
+        if: always()
+        run: |
+          docker rm -f age-decision-core || true
+          docker volume rm core-models-ci || true
+
+  auto-tag:
+    name: Automatic release tag
+    runs-on: ubuntu-latest
+    needs: [docker-runtime]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Create tag from project metadata
+        run: python scripts/release/create_tag_from_project.py

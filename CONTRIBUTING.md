@@ -16,7 +16,29 @@ https://github.com/credona/age-decision/blob/main/CONTRIBUTING.md
 cp .env.example .env
 docker compose -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
+```
+
+<hr>
+
+<h2>Developer workflow</h2>
+
+Run the full local check:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/check_local.sh
+```
+
+Update generated files:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/update_all.sh
+```
+
+Prepare a release:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/ci/release_prepare.sh
 ```
 
 <hr>
@@ -24,7 +46,7 @@ docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/d
 <h2>Run tests</h2>
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 docker compose -f docker-compose.dev.yml exec age-decision-core pytest
 ```
 
@@ -35,8 +57,8 @@ docker compose -f docker-compose.dev.yml exec age-decision-core pytest
 ```bash
 docker compose -f docker-compose.dev.yml exec age-decision-core ruff check .
 docker compose -f docker-compose.dev.yml exec age-decision-core ruff format --check .
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/check_project_metadata.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/check_compatibility_metadata.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/metadata/check_project_metadata.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/metadata/check_compatibility_metadata.py
 ```
 
 <hr>
@@ -48,9 +70,15 @@ Some documentation blocks are generated from `project.json` and `compatibility.j
 Run:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_readme_examples.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_docs_usage.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_docs_compatibility.py
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/update_all.sh
+```
+
+Or run scripts individually:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_readme_examples.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_docs_usage.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_docs_compatibility.py
 ```
 
 Generated blocks are delimited by comments such as:
@@ -75,6 +103,8 @@ Good Core contributions include:
 - privacy metadata improvements
 - benchmark improvements
 - tests and documentation
+- developer workflow improvements
+- release automation improvements
 
 <hr>
 
@@ -94,7 +124,7 @@ Do not commit:
 Model files must be downloaded explicitly through:
 
 ```text
-scripts/download_models.py
+scripts/models/download_models.py
 ```
 
 <hr>
@@ -107,10 +137,16 @@ Project identity metadata must be edited in:
 project.json
 ```
 
-Compatibility metadata must be edited in:
+Compatibility metadata is generated from:
 
 ```text
-compatibility.json
+project.json
+```
+
+using:
+
+```text
+scripts/docs/update_compatibility.py
 ```
 
 Do not duplicate the service name, application name, version or contract version in environment files.
@@ -120,9 +156,22 @@ Release tags must match the version declared in `project.json`.
 Example:
 
 ```text
-project.json version: 2.1.0
-Git tag: v2.1.0
+project.json version: 2.2.0
+Git tag: v2.2.0
 ```
+
+<hr>
+
+<h2>Release policy</h2>
+
+After a successful CI run on `main`, the release automation creates a Git tag from `project.json`.
+
+The tag then triggers:
+
+- the GitHub release workflow
+- the Docker image workflow
+
+Do not create a release tag manually unless automation failed and the repository state has been verified.
 
 <hr>
 
@@ -131,7 +180,7 @@ Git tag: v2.1.0
 When adding or changing a model, update:
 
 - docs/models.md
-- scripts/download_models.py
+- scripts/models/download_models.py
 - related tests
 - benchmark notes when applicable
 

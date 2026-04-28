@@ -37,7 +37,7 @@ It does not perform identity verification, face recognition, document verificati
 cp .env.example .env
 docker compose -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 ```
 
 Check the service:
@@ -55,7 +55,7 @@ Expected health response:
 {
   "status": "ok",
   "service": "age-decision-core",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "contract_version": "2.0"
 }
 ```
@@ -68,7 +68,7 @@ Expected version response:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "contract_version": "2.0",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
@@ -87,6 +87,28 @@ curl -X POST "http://localhost:8000/estimate?majority_country=FR" \
 
 <hr>
 
+<h2>Developer workflow</h2>
+
+Run the complete local validation command:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/check_local.sh
+```
+
+Update all generated files:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/update_all.sh
+```
+
+Prepare a release locally:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/ci/release_prepare.sh
+```
+
+<hr>
+
 <h2>Model files</h2>
 
 Age Decision Core uses external ONNX model files.
@@ -98,7 +120,7 @@ Model binaries are not intended to be embedded in the public Docker image by def
 Download them explicitly when needed:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 ```
 
 Expected local paths:
@@ -162,22 +184,22 @@ Compatibility metadata is declared in `compatibility.json` and checked by CI.
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "contract_version": "2.0",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"
   },
   "public_contract": {
+    "estimated_age_exposed": false,
+    "raw_confidence_exposed": false,
+    "legacy_cred_score_exposed": false,
+    "score_field": "cred_decision_score",
     "decision_values": [
       "match",
       "no_match",
       "uncertain"
-    ],
-    "score_field": "cred_decision_score",
-    "estimated_age_exposed": false,
-    "raw_confidence_exposed": false,
-    "legacy_cred_score_exposed": false
+    ]
   }
 }
 ```
@@ -204,16 +226,16 @@ Run quality checks:
 ```bash
 docker compose -f docker-compose.dev.yml exec age-decision-core ruff check .
 docker compose -f docker-compose.dev.yml exec age-decision-core ruff format --check .
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/check_project_metadata.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/check_compatibility_metadata.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/metadata/check_project_metadata.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/metadata/check_compatibility_metadata.py
 ```
 
 Update generated documentation blocks:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_readme_examples.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_docs_usage.py
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_docs_compatibility.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_readme_examples.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_docs_usage.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/docs/update_docs_compatibility.py
 ```
 
 Compile Python files:
@@ -237,7 +259,7 @@ It should not contain ONNX model binaries by default.
 Run with mounted models:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 
 docker run --rm \
   -p 8000:8000 \
@@ -250,7 +272,7 @@ docker run --rm \
 <h2>Testing</h2>
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 docker compose -f docker-compose.dev.yml exec age-decision-core pytest
 ```
 

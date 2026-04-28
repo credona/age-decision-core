@@ -6,6 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y \
+    git \
     libglib2.0-0 \
     libgl1 \
     && rm -rf /var/lib/apt/lists/*
@@ -21,6 +22,8 @@ COPY pyproject.toml .
 COPY project.json .
 COPY compatibility.json .
 COPY pytest.ini ./pytest.ini
+
+RUN chmod +x scripts/dev/*.sh scripts/ci/*.sh || true
 
 EXPOSE 8000
 

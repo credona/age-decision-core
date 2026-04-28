@@ -57,7 +57,7 @@ Generated view:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "contract_version": "2.0",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
@@ -83,22 +83,22 @@ Generated view:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "contract_version": "2.0",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"
   },
   "public_contract": {
+    "estimated_age_exposed": false,
+    "raw_confidence_exposed": false,
+    "legacy_cred_score_exposed": false,
+    "score_field": "cred_decision_score",
     "decision_values": [
       "match",
       "no_match",
       "uncertain"
-    ],
-    "score_field": "cred_decision_score",
-    "estimated_age_exposed": false,
-    "raw_confidence_exposed": false,
-    "legacy_cred_score_exposed": false
+    ]
   }
 }
 ```
@@ -211,6 +211,8 @@ The following changes are considered backward-compatible in v2.x:
 - adding tests
 - adding documentation
 - adding CI checks
+- improving developer workflow scripts
+- improving release automation
 
 <hr>
 
@@ -260,8 +262,9 @@ Compatibility is checked through:
 - compatibility metadata checks
 - Docker runtime checks
 - release tag checks
+- generated documentation checks
 
-The compatibility workflow is a baseline for v2.1.0.
+The compatibility workflow is a baseline for the v2.x release line.
 
 Cross-repository integration tests are tracked separately in the global roadmap.
 
@@ -274,11 +277,15 @@ On tag release, CI verifies that the Git tag matches the version declared in `pr
 Example:
 
 ```text
-project.json version: 2.1.0
-expected Git tag: v2.1.0
+project.json version: 2.2.0
+expected Git tag: v2.2.0
 ```
 
 A mismatched tag must fail the release workflow.
+
+After the main CI succeeds, release automation may create the matching Git tag from `project.json`.
+
+The created tag triggers the release workflow and Docker image workflow.
 
 <hr>
 
@@ -295,9 +302,15 @@ COMPATIBILITY_METADATA
 They are updated by:
 
 ```bash
-python scripts/update_readme_examples.py
-python scripts/update_docs_usage.py
-python scripts/update_docs_compatibility.py
+python scripts/docs/update_readme_examples.py
+python scripts/docs/update_docs_usage.py
+python scripts/docs/update_docs_compatibility.py
+```
+
+Or with:
+
+```bash
+scripts/dev/update_all.sh
 ```
 
 CI fails if generated documentation is not synchronized.

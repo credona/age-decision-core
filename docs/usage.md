@@ -64,7 +64,7 @@ contract_version
 Download model files locally:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 ```
 
 Expected files:
@@ -85,7 +85,7 @@ Model binaries are not intended to be embedded in the public Docker image by def
 ```bash
 docker compose -f docker-compose.dev.yml down -v
 docker compose -f docker-compose.dev.yml up -d --build
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 ```
 
 View logs:
@@ -102,12 +102,34 @@ docker compose -f docker-compose.dev.yml down -v
 
 <hr>
 
+<h2>Developer workflow</h2>
+
+Run the complete local validation command:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/check_local.sh
+```
+
+Update all generated files:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/dev/update_all.sh
+```
+
+Prepare a release locally:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core scripts/ci/release_prepare.sh
+```
+
+<hr>
+
 <h2>Run the public Docker image</h2>
 
 Download models locally first:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
 ```
 
 Run the image with mounted models:
@@ -134,7 +156,7 @@ Example response:
 {
   "status": "ok",
   "service": "age-decision-core",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "contract_version": "2.0"
 }
 ```
@@ -155,7 +177,7 @@ Example response:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "contract_version": "2.0",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
@@ -356,22 +378,22 @@ Generated view:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "contract_version": "2.0",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"
   },
   "public_contract": {
+    "estimated_age_exposed": false,
+    "raw_confidence_exposed": false,
+    "legacy_cred_score_exposed": false,
+    "score_field": "cred_decision_score",
     "decision_values": [
       "match",
       "no_match",
       "uncertain"
-    ],
-    "score_field": "cred_decision_score",
-    "estimated_age_exposed": false,
-    "raw_confidence_exposed": false,
-    "legacy_cred_score_exposed": false
+    ]
   }
 }
 ```
