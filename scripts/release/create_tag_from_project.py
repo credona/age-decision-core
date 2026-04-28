@@ -41,6 +41,20 @@ def main() -> None:
         print(f"Tag already exists remotely: {tag}")
         return
 
+    token = os.getenv("AGE_DECISION_RELEASE_TOKEN")
+    repository = os.getenv("GITHUB_REPOSITORY")
+
+    if token and repository:
+        run(
+            [
+                "git",
+                "remote",
+                "set-url",
+                "origin",
+                f"https://x-access-token:{token}@github.com/{repository}.git",
+            ]
+        )
+
     run(["git", "config", "user.name", "github-actions[bot]"])
     run(["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"])
     run(["git", "tag", "-a", tag, "-m", f"Release {tag}"])
