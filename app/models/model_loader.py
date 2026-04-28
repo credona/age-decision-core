@@ -32,4 +32,4 @@ class ModelLoader:
             return self.session
 
         except Exception as exc:
-            raise RuntimeError(f"Failed to load ONNX model: {exc}")
+            raise RuntimeError(f"Failed to load ONNX model: {exc}") from exc

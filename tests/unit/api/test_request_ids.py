@@ -4,7 +4,6 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-
 client = TestClient(app)
 
 
@@ -58,7 +57,9 @@ def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
                 "face_detector": "YuNet",
                 "age_estimator": "age-gender-prediction-ONNX",
                 "age_model_path": "models/age_estimation/age-gender-prediction-ONNX.onnx",
-                "face_detection_model_path": "models/face_detection/face_detection_yunet_2023mar.onnx",
+                "face_detection_model_path": (
+                    "models/face_detection/face_detection_yunet_2023mar.onnx"
+                ),
             },
         }
 

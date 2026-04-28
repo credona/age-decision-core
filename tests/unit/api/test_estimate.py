@@ -1,5 +1,4 @@
 from io import BytesIO
-
 from unittest.mock import AsyncMock
 
 import app.api.routes as routes
@@ -57,7 +56,9 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
                 "face_detector": "YuNet",
                 "age_estimator": "age-gender-prediction-ONNX",
                 "age_model_path": "models/age_estimation/age-gender-prediction-ONNX.onnx",
-                "face_detection_model_path": "models/face_detection/face_detection_yunet_2023mar.onnx",
+                "face_detection_model_path": (
+                    "models/face_detection/face_detection_yunet_2023mar.onnx"
+                ),
             },
         }
     )

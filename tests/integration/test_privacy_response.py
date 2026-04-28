@@ -1,8 +1,9 @@
 from pathlib import Path
+
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.domain.privacy import PrivacyMetadataBuilder
+from app.main import app
 
 client = TestClient(app)
 
@@ -37,6 +38,7 @@ def test_estimate_does_not_leak_sensitive_data():
 
     for key in forbidden_keys:
         assert key not in payload_str
+
 
 def test_privacy_metadata_is_ephemeral():
     builder = PrivacyMetadataBuilder()

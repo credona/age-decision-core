@@ -19,7 +19,7 @@ class FaceCropper:
 
         x, y, w, h = faces[0]
 
-        face = image[y:y + h, x:x + w]
+        face = image[y : y + h, x : x + w]
 
         if face.size == 0:
             raise ValueError("Invalid face crop.")

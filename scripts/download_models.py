@@ -1,7 +1,6 @@
 from pathlib import Path
 from urllib.request import urlretrieve
 
-
 MODELS = {
     "models/face_detection/face_detection_yunet_2023mar.onnx": (
         "https://github.com/opencv/opencv_zoo/raw/main/models/"

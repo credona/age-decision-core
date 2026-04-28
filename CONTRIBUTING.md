@@ -30,6 +30,40 @@ docker compose -f docker-compose.dev.yml exec age-decision-core pytest
 
 <hr>
 
+<h2>Run quality checks</h2>
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core ruff check .
+docker compose -f docker-compose.dev.yml exec age-decision-core ruff format --check .
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/check_project_metadata.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/check_compatibility_metadata.py
+```
+
+<hr>
+
+<h2>Update generated documentation</h2>
+
+Some documentation blocks are generated from `project.json` and `compatibility.json`.
+
+Run:
+
+```bash
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_readme_examples.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_docs_usage.py
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/update_docs_compatibility.py
+```
+
+Generated blocks are delimited by comments such as:
+
+```text
+<!-- BEGIN:HEALTH_RESPONSE -->
+<!-- END:HEALTH_RESPONSE -->
+```
+
+Do not edit generated blocks manually.
+
+<hr>
+
 <h2>Contribution scope</h2>
 
 Good Core contributions include:
@@ -65,6 +99,33 @@ scripts/download_models.py
 
 <hr>
 
+<h2>Project metadata policy</h2>
+
+Project identity metadata must be edited in:
+
+```text
+project.json
+```
+
+Compatibility metadata must be edited in:
+
+```text
+compatibility.json
+```
+
+Do not duplicate the service name, application name, version or contract version in environment files.
+
+Release tags must match the version declared in `project.json`.
+
+Example:
+
+```text
+project.json version: 2.1.0
+Git tag: v2.1.0
+```
+
+<hr>
+
 <h2>Model policy</h2>
 
 When adding or changing a model, update:
@@ -94,4 +155,5 @@ Use:
 - docs/usage.md for service usage
 - docs/models.md for model transparency and third-party notices
 - docs/benchmarks.md for benchmark methodology
+- docs/compatibility.md for compatibility and contract stability rules
 - CHANGELOG.md for release history

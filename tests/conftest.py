@@ -1,8 +1,6 @@
 import os
 
 os.environ["USE_MOCK_MODEL"] = "true"
-os.environ["APP_NAME"] = "Age Decision Core Test"
-os.environ["APP_VERSION"] = "2.0.0-test"
 
 import pytest
 from fastapi.testclient import TestClient

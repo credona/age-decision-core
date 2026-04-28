@@ -1,6 +1,3 @@
-from app.config import settings
-
-
 class CountryRules:
     """
     Provides age threshold rules by country (ISO 3166-1 alpha-2).

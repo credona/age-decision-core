@@ -1,0 +1,16 @@
+{
+  "service": "age-decision-core",
+  "version": "2.1.0",
+  "contract_version": "2.0",
+  "compatible_with": {
+    "age-decision-api": ">=2.0.0 <3.0.0",
+    "age-decision-js": ">=2.0.0 <3.0.0"
+  },
+  "public_contract": {
+    "decision_values": ["match", "no_match", "uncertain"],
+    "score_field": "cred_decision_score",
+    "estimated_age_exposed": false,
+    "raw_confidence_exposed": false,
+    "legacy_cred_score_exposed": false
+  }
+}
