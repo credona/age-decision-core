@@ -1,7 +1,7 @@
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "contract_version": "2.2",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core",
