@@ -41,7 +41,7 @@ Expected health response:
 {
   "status": "ok",
   "service": "age-decision-core",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "contract_version": "2.2"
 }
 ```
@@ -54,7 +54,7 @@ Expected version response:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "contract_version": "2.2",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
@@ -147,7 +147,7 @@ Run validation only:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "contract_version": "2.2",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
