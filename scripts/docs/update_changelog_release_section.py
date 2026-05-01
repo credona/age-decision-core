@@ -8,6 +8,7 @@ from pathlib import Path
 CHANGELOG_PATH = Path("CHANGELOG.md")
 ANCHOR = "Global project direction is tracked in the central Age Decision repository.\n\n"
 MANAGED_VERSION = "2.3.0"
+VERSION_SECTION_HEADING_RE = re.compile(r"<h2>\d+\.\d+\.\d+</h2>")
 
 CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
     "Added stable public status contract regression coverage for "
@@ -43,10 +44,14 @@ def main() -> None:
     )
     if pattern.search(text):
         updated = pattern.sub(new_block, text, count=1)
-    elif ANCHOR in text:
-        updated = text.replace(ANCHOR, ANCHOR + new_block, 1)
     else:
-        raise SystemExit("CHANGELOG.md missing expected anchor paragraph")
+        m = VERSION_SECTION_HEADING_RE.search(text)
+        if m:
+            updated = text[: m.start()] + new_block + text[m.start() :]
+        elif ANCHOR in text:
+            updated = text.replace(ANCHOR, ANCHOR + new_block, 1)
+        else:
+            raise SystemExit("CHANGELOG.md missing expected anchor paragraph")
 
     CHANGELOG_PATH.write_text(updated, encoding="utf-8")
 
