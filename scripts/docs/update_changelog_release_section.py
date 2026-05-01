@@ -27,6 +27,10 @@ CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
     "Mapped missing multipart file validation failures to <code>missing_file</code> "
     "with HTTP 400 and <code>Invalid request.</code>.",
     "Preserved privacy-first forbidden field guarantees across public contract checks.",
+    "Documented public contract deprecation rules in <code>docs/deprecation-policy.md</code>.",
+    "Documented the standardized error model and known codes in <code>docs/error-model.md</code>.",
+    "Documented stable status endpoints and <code>contract_version</code> behavior in "
+    "<code>docs/status-contract.md</code>.",
 )
 
 

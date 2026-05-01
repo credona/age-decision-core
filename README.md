@@ -44,6 +44,9 @@ Public contract governance in v2.3.0 includes stable status endpoint coverage, s
 
 - Repository: https://github.com/credona/age-decision-core
 - Usage: docs/usage.md
+- Deprecation policy: docs/deprecation-policy.md
+- Error model: docs/error-model.md
+- Status contract: docs/status-contract.md
 - Models and third-party notices: docs/models.md
 - Benchmarks: docs/benchmarks.md
 - Compatibility: docs/compatibility.md
