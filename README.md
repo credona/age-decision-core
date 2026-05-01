@@ -22,6 +22,8 @@ It does not expose estimated age.
 
 It does not perform identity verification, face recognition, document verification, or legal age proof.
 
+Public contract governance in v2.3.0 includes stable status endpoint coverage, standardized public error responses, normalized request validation errors, and enforced privacy-first forbidden field guarantees.
+
 <hr>
 
 <h2>When to use this repository</h2>
@@ -42,6 +44,9 @@ It does not perform identity verification, face recognition, document verificati
 
 - Repository: https://github.com/credona/age-decision-core
 - Usage: docs/usage.md
+- Deprecation policy: docs/deprecation-policy.md
+- Error model: docs/error-model.md
+- Status contract: docs/status-contract.md
 - Models and third-party notices: docs/models.md
 - Benchmarks: docs/benchmarks.md
 - Compatibility: docs/compatibility.md

@@ -41,8 +41,8 @@ Expected health response:
 {
   "status": "ok",
   "service": "age-decision-core",
-  "version": "2.2.3",
-  "contract_version": "2.2"
+  "version": "2.3.0",
+  "contract_version": "2.3"
 }
 ```
 <!-- END:HEALTH_RESPONSE -->
@@ -54,8 +54,8 @@ Expected version response:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.2.3",
-  "contract_version": "2.2",
+  "version": "2.3.0",
+  "contract_version": "2.3",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
 }
@@ -71,6 +71,27 @@ curl -X POST "http://localhost:8000/estimate?majority_country=FR" \
   -H "X-Request-ID: test-request-001" \
   -H "X-Correlation-ID: test-correlation-001" \
   -F "file=@./test-face.jpg"
+```
+
+Standardized validation error example (missing multipart file):
+
+```bash
+curl -X POST "http://localhost:8000/estimate" \
+  -H "X-Request-ID: test-request-002" \
+  -H "X-Correlation-ID: test-correlation-002"
+```
+
+Expected response:
+
+```json
+{
+  "request_id": "test-request-002",
+  "correlation_id": "test-correlation-002",
+  "error": {
+    "code": "missing_file",
+    "message": "Invalid request."
+  }
+}
 ```
 
 <hr>
@@ -147,8 +168,8 @@ Run validation only:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.2.3",
-  "contract_version": "2.2",
+  "version": "2.3.0",
+  "contract_version": "2.3",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"

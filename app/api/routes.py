@@ -1,6 +1,7 @@
 from uuid import uuid4
 
-from fastapi import APIRouter, File, Header, Query, UploadFile
+from fastapi import APIRouter, File, Header, Query, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.project import project_metadata
@@ -50,8 +51,10 @@ async def estimate_age(
     x_request_id: str | None = Header(default=None),
     x_correlation_id: str | None = Header(default=None),
 ):
-    request_id = x_request_id or str(uuid4())
-    correlation_id = x_correlation_id or request_id
+    request_id, correlation_id = _resolve_request_identifiers(
+        x_request_id=x_request_id,
+        x_correlation_id=x_correlation_id,
+    )
 
     try:
         result = await age_estimation_service.estimate(
@@ -99,6 +102,29 @@ async def estimate_age(
         )
 
 
+async def handle_request_validation_error(request: Request, exc: RequestValidationError):
+    request_id, correlation_id = _resolve_request_identifiers(
+        x_request_id=request.headers.get("x-request-id"),
+        x_correlation_id=request.headers.get("x-correlation-id"),
+    )
+    error_code = _map_validation_error_code(exc.errors())
+
+    _log_error(
+        request_id=request_id,
+        correlation_id=correlation_id,
+        error_type="validation_error",
+        error_code=error_code,
+    )
+
+    return _error_response(
+        status_code=400,
+        request_id=request_id,
+        correlation_id=correlation_id,
+        code=error_code,
+        message="Invalid request.",
+    )
+
+
 def _error_response(
     status_code: int,
     request_id: str,
@@ -119,6 +145,15 @@ def _error_response(
     )
 
 
+def _resolve_request_identifiers(
+    x_request_id: str | None,
+    x_correlation_id: str | None,
+) -> tuple[str, str]:
+    request_id = x_request_id or str(uuid4())
+    correlation_id = x_correlation_id or request_id
+    return request_id, correlation_id
+
+
 def _map_value_error_code(message: str) -> str:
     normalized = message.lower()
 
@@ -127,6 +162,17 @@ def _map_value_error_code(message: str) -> str:
 
     if "unsupported file type" in normalized:
         return "unsupported_file_type"
+
+    return "invalid_request"
+
+
+def _map_validation_error_code(errors: list[dict]) -> str:
+    for error in errors:
+        loc = error.get("loc", ())
+        error_type = error.get("type", "")
+
+        if "file" in loc and error_type in {"missing", "value_error.missing"}:
+            return "missing_file"
 
     return "invalid_request"
 
