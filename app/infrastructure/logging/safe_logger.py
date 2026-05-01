@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import UTC, datetime
 
-from app.config import settings
+from app.infrastructure.config.settings import settings
 from app.project import project_metadata
 
 

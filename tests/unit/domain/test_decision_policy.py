@@ -1,4 +1,4 @@
-from app.domain.decision_policy import DecisionPolicy
+from app.domain.decision.policy import DecisionPolicy
 
 
 def test_decision_policy_returns_match():

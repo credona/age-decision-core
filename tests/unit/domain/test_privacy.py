@@ -1,4 +1,4 @@
-from app.domain.privacy import PrivacyMetadataBuilder
+from app.domain.privacy.metadata import PrivacyMetadataBuilder
 
 
 def test_privacy_metadata_is_ephemeral():

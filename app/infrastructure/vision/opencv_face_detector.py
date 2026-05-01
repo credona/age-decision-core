@@ -2,7 +2,7 @@ import os
 
 import cv2
 
-from app.config import settings
+from app.infrastructure.config.settings import settings
 
 
 class FaceDetector:

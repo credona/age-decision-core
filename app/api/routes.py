@@ -4,15 +4,26 @@ from fastapi import APIRouter, File, Header, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.api.response_filter import filter_age_decision_response
+from app.application.dto.estimate_command import EstimateCommand
+from app.application.use_cases.age_estimation_pipeline import AgeEstimationService
+from app.application.use_cases.estimate_age_decision import EstimateAgeDecisionUseCase
+from app.application.use_cases.get_model_status import GetModelStatusUseCase
+from app.infrastructure.logging.safe_logger import get_logger, log_event
+from app.infrastructure.models.onnx_age_predictor import AgePredictor
+from app.infrastructure.vision.opencv_face_detector import FaceDetector
 from app.project import project_metadata
 from app.schemas.error import ErrorResponse
 from app.schemas.estimate import AgeDecisionResponse
-from app.services.age_estimation_service import AgeEstimationService
-from app.utils.logger import get_logger, log_event
 
 router = APIRouter()
 
-age_estimation_service = AgeEstimationService()
+age_estimation_service = AgeEstimationService(
+    age_predictor=AgePredictor(),
+    face_detector=FaceDetector(),
+)
+estimate_age_decision_use_case = EstimateAgeDecisionUseCase(age_estimation_service)
+get_model_status_use_case = GetModelStatusUseCase(age_estimation_service)
 logger = get_logger("age_decision_api")
 
 
@@ -33,7 +44,7 @@ def version():
 
 @router.get("/model/status")
 def model_status():
-    return age_estimation_service.get_model_status()
+    return get_model_status_use_case.execute()
 
 
 @router.post(
@@ -57,15 +68,20 @@ async def estimate_age(
     )
 
     try:
-        result = await age_estimation_service.estimate(
-            file=file,
-            request_id=request_id,
-            correlation_id=correlation_id,
-            age_threshold=age_threshold,
-            majority_country=majority_country,
+        image_bytes = await file.read()
+
+        result = await estimate_age_decision_use_case.execute(
+            EstimateCommand(
+                image_bytes=image_bytes,
+                content_type=file.content_type,
+                request_id=request_id,
+                correlation_id=correlation_id,
+                age_threshold=age_threshold,
+                majority_country=majority_country,
+            )
         )
 
-        return AgeDecisionResponse(**result)
+        return filter_age_decision_response(result)
 
     except ValueError as exc:
         error_code = _map_value_error_code(str(exc))

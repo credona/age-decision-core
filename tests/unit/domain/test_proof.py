@@ -1,4 +1,4 @@
-from app.domain.proof import ProofMetadataBuilder
+from app.domain.proof.metadata import ProofMetadataBuilder
 
 
 def test_proof_metadata_enabled():

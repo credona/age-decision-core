@@ -2,7 +2,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.domain.privacy import PrivacyMetadataBuilder
+from app.domain.privacy.metadata import PrivacyMetadataBuilder
 from app.main import app
 
 client = TestClient(app)

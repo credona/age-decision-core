@@ -1,4 +1,4 @@
-from app.domain.cred_score import CredScoreCalculator
+from app.domain.decision.score import CredScoreCalculator
 
 
 def test_cred_score_is_none_for_uncertain_decision():

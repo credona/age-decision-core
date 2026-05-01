@@ -1,7 +1,7 @@
 import numpy as np
 
-from app.config import settings
-from app.models.model_loader import ModelLoader
+from app.infrastructure.config.settings import settings
+from app.infrastructure.models.model_loader import ModelLoader
 
 
 class AgePredictor:
