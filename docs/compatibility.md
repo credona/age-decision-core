@@ -58,8 +58,8 @@ Generated view:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.2.3",
-  "contract_version": "2.2",
+  "version": "2.3.0",
+  "contract_version": "2.3",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
 }
@@ -86,8 +86,8 @@ Generated view:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.2.3",
-  "contract_version": "2.2",
+  "version": "2.3.0",
+  "contract_version": "2.3",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"
@@ -231,6 +231,14 @@ Compatibility is checked through:
 - Docker metadata checks
 - release tag checks
 - generated documentation checks
+
+v2.3.0 contract governance coverage also verifies:
+
+- stable status contract for `GET /health`
+- stable status contract for `GET /model/status`
+- standardized ErrorResponse shape for public validation errors
+- missing multipart file mapped to `missing_file` with HTTP 400
+- privacy-first forbidden public fields remain forbidden (`estimated_age`, `confidence`, `is_adult`, `cred_score`)
 
 Run all checks:
 

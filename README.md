@@ -22,6 +22,8 @@ It does not expose estimated age.
 
 It does not perform identity verification, face recognition, document verification, or legal age proof.
 
+Public contract governance in v2.3.0 includes stable status endpoint coverage, standardized public error responses, normalized request validation errors, and enforced privacy-first forbidden field guarantees.
+
 <hr>
 
 <h2>When to use this repository</h2>
