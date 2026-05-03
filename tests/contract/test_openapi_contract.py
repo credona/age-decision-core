@@ -5,7 +5,7 @@ def test_openapi_estimate_schema_contains_v2_privacy_first_fields(client):
 
     payload = response.json()
 
-    schema = payload["components"]["schemas"]["AgeDecisionResponse"]
+    schema = payload["components"]["schemas"]["DecisionResponse"]
     properties = schema["properties"]
 
     assert "decision" in properties
@@ -14,8 +14,8 @@ def test_openapi_estimate_schema_contains_v2_privacy_first_fields(client):
     assert "privacy" in properties
     assert "proof" in properties
 
-    assert "estimated_age" not in properties
-    assert "confidence" not in properties
+    assert "internal_estimate" not in properties
+    assert "signal_quality_score" not in properties
     assert "is_adult" not in properties
     assert "cred_score" not in properties
 

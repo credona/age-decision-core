@@ -19,10 +19,13 @@ CHANGELOG_PATH = Path("CHANGELOG.md")
 MANAGED_VERSION = "2.4.0"
 
 CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
-    "Started the v2.4.0 internal architecture refactoring cycle.",
-    "Prepared clean architecture boundaries for the Core service.",
-    "Preserved the existing public API contract with no response field changes.",
-    "Kept Docker and CI validation as the release gate for structural changes.",
+    "Introduced clean architecture boundaries across internal layers.",
+    "Replaced age-oriented internals with neutral decision pipeline terminology.",
+    "Moved predictor and face detector adapters behind inference engine and input analyzer ports.",
+    "Centralized decision, score, proof, privacy, and API constants to reduce magic strings.",
+    "Updated public documentation from model status terminology to engine status terminology.",
+    "Preserved the existing public API contract and privacy-first forbidden field checks.",
+    "Validated the refactor through Docker CI-equivalent checks.",
 )
 
 

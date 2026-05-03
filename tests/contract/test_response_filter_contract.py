@@ -1,4 +1,4 @@
-from app.api.response_filter import filter_age_decision_response
+from app.api.response_filter import filter_decision_response
 
 
 def test_age_decision_response_filter_ignores_internal_fields():
@@ -9,7 +9,7 @@ def test_age_decision_response_filter_ignores_internal_fields():
         "majority_country": None,
     }
 
-    response = filter_age_decision_response(
+    response = filter_decision_response(
         {
             "request_id": "req-1",
             "correlation_id": "corr-1",
@@ -27,14 +27,14 @@ def test_age_decision_response_filter_ignores_internal_fields():
                 "score": 0.8,
                 "level": "high",
                 "factors": {
-                    "model_confidence": "medium",
+                    "signal_quality": "medium",
                     "threshold_separation": "high",
                 },
             },
             "privacy": {
                 "image_stored": False,
                 "biometric_template_stored": False,
-                "estimated_age_exposed": False,
+                "internal_estimate_exposed": False,
                 "processing": "ephemeral",
                 "zk_ready": True,
             },
@@ -45,14 +45,12 @@ def test_age_decision_response_filter_ignores_internal_fields():
                 "threshold": threshold,
             },
             "rejection_reason": None,
-            "model_info": {
-                "face_detector": "YuNet",
-                "age_estimator": "age-gender-prediction-ONNX",
-                "age_model_path": "/internal/model.onnx",
-                "face_detection_model_path": "/internal/face.onnx",
+            "engine_info": {
+                "input_analyzer": "YuNet",
+                "inference_engine": "age-gender-prediction-ONNX",
             },
-            "estimated_age": 25,
-            "confidence": 0.99,
+            "internal_estimate": 25,
+            "signal_quality_score": 0.99,
             "raw_scores": {"age": 25},
             "internal_thresholds": {"margin": 2},
         }
@@ -60,7 +58,7 @@ def test_age_decision_response_filter_ignores_internal_fields():
 
     dumped = response.model_dump()
 
-    assert "estimated_age" not in dumped
-    assert "confidence" not in dumped
+    assert "internal_estimate" not in dumped
+    assert "signal_quality_score" not in dumped
     assert "raw_scores" not in dumped
     assert "internal_thresholds" not in dumped

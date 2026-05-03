@@ -7,10 +7,13 @@ Global project direction is tracked in the central Age Decision repository.
 <h2>2.4.0</h2>
 
 <ul>
-  <li>Started the v2.4.0 internal architecture refactoring cycle.</li>
-  <li>Prepared clean architecture boundaries for the Core service.</li>
-  <li>Preserved the existing public API contract with no response field changes.</li>
-  <li>Kept Docker and CI validation as the release gate for structural changes.</li>
+  <li>Introduced clean architecture boundaries across internal layers.</li>
+  <li>Replaced age-oriented internals with neutral decision pipeline terminology.</li>
+  <li>Moved predictor and face detector adapters behind inference engine and input analyzer ports.</li>
+  <li>Centralized decision, score, proof, privacy, and API constants to reduce magic strings.</li>
+  <li>Updated public documentation from model status terminology to engine status terminology.</li>
+  <li>Preserved the existing public API contract and privacy-first forbidden field checks.</li>
+  <li>Validated the refactor through Docker CI-equivalent checks.</li>
 </ul>
 
 <hr>

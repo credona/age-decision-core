@@ -4,9 +4,9 @@ from app.infrastructure.config.settings import settings
 from app.infrastructure.models.model_loader import ModelLoader
 
 
-class AgePredictor:
+class OnnxInferenceEngine:
     """
-    Handles age prediction using the configured ONNX model.
+    Runs the configured ONNX inference engine.
     """
 
     def __init__(self):
@@ -24,17 +24,15 @@ class AgePredictor:
             return {
                 "mode": "mock",
                 "use_mock_model": self.use_mock,
-                "model_path": settings.age_model_path,
                 "model_loaded": False,
-                "age_output_supported": True,
+                "output_supported": True,
             }
 
         return {
             "mode": "onnx",
             "use_mock_model": self.use_mock,
-            "model_path": settings.age_model_path,
             "model_loaded": True,
-            "age_output_supported": self._has_supported_age_output(),
+            "output_supported": self._has_supported_age_output(),
             "inputs": [
                 {
                     "name": input_.name,
@@ -53,17 +51,17 @@ class AgePredictor:
             ],
         }
 
-    def predict(self, face_tensor: np.ndarray) -> tuple[float, float]:
+    def predict(self, prepared_input: np.ndarray) -> tuple[float, float]:
         """
-        Predict age and return (estimated_age, confidence).
+        Run inference and return (internal_estimate, signal_quality_score).
         """
         if self.use_mock or self.session is None:
-            return 25.0, settings.default_age_confidence
+            return 25.0, settings.default_signal_quality
 
         if not self._has_supported_age_output():
-            raise RuntimeError("Configured ONNX model does not expose a supported age output.")
+            raise RuntimeError("Configured ONNX model does not expose a supported output.")
 
-        return self._onnx_prediction(face_tensor)
+        return self._onnx_prediction(prepared_input)
 
     def _has_supported_age_output(self) -> bool:
         """
@@ -94,41 +92,41 @@ class AgePredictor:
 
         return False
 
-    def _onnx_prediction(self, face_tensor: np.ndarray) -> tuple[float, float]:
+    def _onnx_prediction(self, prepared_input: np.ndarray) -> tuple[float, float]:
         input_name = self.session.get_inputs()[0].name
 
-        outputs = self.session.run(None, {input_name: face_tensor})
+        outputs = self.session.run(None, {input_name: prepared_input})
 
-        age, confidence = self._parse_outputs(outputs)
+        age, signal_quality_score = self._parse_outputs(outputs)
 
         if age < 0 or age > 120:
-            raise RuntimeError(f"Invalid age prediction returned by model: {age}")
+            raise RuntimeError(f"Invalid internal estimate returned by inference engine: {age}")
 
-        if confidence < 0 or confidence > 1:
-            raise RuntimeError(f"Invalid confidence returned by model: {confidence}")
+        if signal_quality_score < 0 or signal_quality_score > 1:
+            raise RuntimeError("Invalid signal quality score returned by inference engine.")
 
-        return age, confidence
+        return age, signal_quality_score
 
     def _parse_outputs(self, outputs) -> tuple[float, float]:
         logits = np.asarray(outputs[0])
 
         if logits.ndim != 2:
-            raise RuntimeError("Unsupported age model output format.")
+            raise RuntimeError("Unsupported inference output format.")
 
         if logits.shape[1] == 2:
             age_logit = float(logits[0][0])
             age = min(max(round(age_logit), 0), 100)
 
-            # The current age-gender ONNX model does not expose direct age confidence.
-            confidence = settings.default_age_confidence
+            # The current age-gender ONNX model does not expose direct direct signal quality score.
+            signal_quality_score = settings.default_signal_quality
 
-            return float(age), confidence
+            return float(age), signal_quality_score
 
         if logits.shape[1] == 1:
             age = float(logits[0][0])
-            confidence = settings.default_age_confidence
+            signal_quality_score = settings.default_signal_quality
 
-            return age, confidence
+            return age, signal_quality_score
 
         if logits.shape[1] >= 80:
             values = logits[0]
@@ -136,11 +134,11 @@ class AgePredictor:
             ages = np.arange(probabilities.size)
 
             age = float(np.sum(probabilities * ages))
-            confidence = float(np.max(probabilities))
+            signal_quality_score = float(np.max(probabilities))
 
-            return age, confidence
+            return age, signal_quality_score
 
-        raise RuntimeError("Unsupported age model output format.")
+        raise RuntimeError("Unsupported inference output format.")
 
     def _softmax_if_needed(self, values: np.ndarray) -> np.ndarray:
         total = float(np.sum(values))

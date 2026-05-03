@@ -4,33 +4,42 @@ from fastapi import APIRouter, File, Header, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.api.response_filter import filter_age_decision_response
+from app.api.constants import (
+    API_STATUS_OK,
+    ERROR_EMPTY_FILE,
+    ERROR_INVALID_REQUEST,
+    ERROR_MISSING_FILE,
+    ERROR_UNSUPPORTED_FILE_TYPE,
+    LOG_EVENT_AGE_DECISION_FAILED,
+    LOG_LEVEL_WARNING,
+)
+from app.api.response_filter import filter_decision_response
 from app.application.dto.estimate_command import EstimateCommand
-from app.application.use_cases.age_estimation_pipeline import AgeEstimationService
-from app.application.use_cases.estimate_age_decision import EstimateAgeDecisionUseCase
-from app.application.use_cases.get_model_status import GetModelStatusUseCase
+from app.application.use_cases.decision_pipeline import DecisionPipeline
+from app.application.use_cases.get_model_status import GetEngineStatusUseCase
+from app.application.use_cases.run_decision import RunDecisionUseCase
 from app.infrastructure.logging.safe_logger import get_logger, log_event
-from app.infrastructure.models.onnx_age_predictor import AgePredictor
-from app.infrastructure.vision.opencv_face_detector import FaceDetector
+from app.infrastructure.models.onnx_inference_engine import OnnxInferenceEngine
+from app.infrastructure.vision.opencv_input_analyzer import OpenCvInputAnalyzer
 from app.project import project_metadata
+from app.schemas.decision import DecisionResponse
 from app.schemas.error import ErrorResponse
-from app.schemas.estimate import AgeDecisionResponse
 
 router = APIRouter()
 
-age_estimation_service = AgeEstimationService(
-    age_predictor=AgePredictor(),
-    face_detector=FaceDetector(),
+decision_pipeline = DecisionPipeline(
+    inference_engine=OnnxInferenceEngine(),
+    input_analyzer=OpenCvInputAnalyzer(),
 )
-estimate_age_decision_use_case = EstimateAgeDecisionUseCase(age_estimation_service)
-get_model_status_use_case = GetModelStatusUseCase(age_estimation_service)
+run_decision_use_case = RunDecisionUseCase(decision_pipeline)
+get_engine_status_use_case = GetEngineStatusUseCase(decision_pipeline)
 logger = get_logger("age_decision_api")
 
 
 @router.get("/health")
 def health():
     return {
-        "status": "ok",
+        "status": API_STATUS_OK,
         "service": project_metadata.service_name,
         "version": project_metadata.version,
         "contract_version": project_metadata.contract_version,
@@ -42,14 +51,14 @@ def version():
     return project_metadata.model_dump()
 
 
-@router.get("/model/status")
+@router.get("/engine/status")
 def model_status():
-    return get_model_status_use_case.execute()
+    return get_engine_status_use_case.execute()
 
 
 @router.post(
     "/estimate",
-    response_model=AgeDecisionResponse,
+    response_model=DecisionResponse,
     responses={
         400: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
@@ -70,7 +79,7 @@ async def estimate_age(
     try:
         image_bytes = await file.read()
 
-        result = await estimate_age_decision_use_case.execute(
+        result = await run_decision_use_case.execute(
             EstimateCommand(
                 image_bytes=image_bytes,
                 content_type=file.content_type,
@@ -81,7 +90,7 @@ async def estimate_age(
             )
         )
 
-        return filter_age_decision_response(result)
+        return filter_decision_response(result)
 
     except ValueError as exc:
         error_code = _map_value_error_code(str(exc))
@@ -174,12 +183,12 @@ def _map_value_error_code(message: str) -> str:
     normalized = message.lower()
 
     if "empty file" in normalized:
-        return "empty_file"
+        return ERROR_EMPTY_FILE
 
     if "unsupported file type" in normalized:
-        return "unsupported_file_type"
+        return ERROR_UNSUPPORTED_FILE_TYPE
 
-    return "invalid_request"
+    return ERROR_INVALID_REQUEST
 
 
 def _map_validation_error_code(errors: list[dict]) -> str:
@@ -188,9 +197,9 @@ def _map_validation_error_code(errors: list[dict]) -> str:
         error_type = error.get("type", "")
 
         if "file" in loc and error_type in {"missing", "value_error.missing"}:
-            return "missing_file"
+            return ERROR_MISSING_FILE
 
-    return "invalid_request"
+    return ERROR_INVALID_REQUEST
 
 
 def _log_error(
@@ -202,8 +211,8 @@ def _log_error(
     log_event(
         logger,
         {
-            "level": "warning",
-            "event": "age_decision_failed",
+            "level": LOG_LEVEL_WARNING,
+            "event": LOG_EVENT_AGE_DECISION_FAILED,
             "request_id": request_id,
             "correlation_id": correlation_id,
             "error_type": error_type,

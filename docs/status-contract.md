@@ -11,7 +11,7 @@ Core exposes these public status-style endpoints:
 <ul>
   <li><code>GET /health</code> — liveness and version contract line.</li>
   <li><code>GET /version</code> — project metadata bundle.</li>
-  <li><code>GET /model/status</code> — coarse readiness of bundled face-detection and age-estimation pipelines.</li>
+  <li><code>GET /engine/status</code> — coarse readiness of bundled face-detection and age-estimation pipelines.</li>
 </ul>
 
 The decision endpoint (<code>POST /estimate</code>) is documented in usage and compatibility material; runtime errors returning JSON use <code>docs/error-model.md</code>.
@@ -48,7 +48,7 @@ Treat any additional keys surfaced under this endpoint as regressions unless rel
 
 <hr>
 
-<h2>/model/status response</h2>
+<h2>/engine/status response</h2>
 
 Top-level keys are constrained to subsystem buckets:
 

@@ -1,3 +1,12 @@
+from app.domain.decision.constants import (
+    PROOF_CLAIM_AGE_OVER_THRESHOLD,
+    PROOF_STATUS_DISABLED,
+    PROOF_STATUS_NOT_GENERATED,
+    PROOF_TYPE_NONE,
+    PROOF_TYPE_ZK_READY,
+)
+
+
 class ProofMetadataBuilder:
     """
     Builds ZK-ready proof metadata.
@@ -13,15 +22,15 @@ class ProofMetadataBuilder:
     ) -> dict:
         if not enabled:
             return {
-                "type": "none",
-                "status": "disabled",
+                "type": PROOF_TYPE_NONE,
+                "status": PROOF_STATUS_DISABLED,
                 "claim": None,
                 "threshold": threshold,
             }
 
         return {
-            "type": "zk-ready",
-            "status": "not_generated",
-            "claim": "age_over_threshold",
+            "type": PROOF_TYPE_ZK_READY,
+            "status": PROOF_STATUS_NOT_GENERATED,
+            "claim": PROOF_CLAIM_AGE_OVER_THRESHOLD,
             "threshold": threshold,
         }

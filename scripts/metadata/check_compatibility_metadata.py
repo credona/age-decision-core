@@ -28,7 +28,7 @@ def main() -> None:
         EXPECTED_DECISION_VALUES,
     )
     assert_equal("score_field", public_contract["score_field"], EXPECTED_SCORE_FIELD)
-    assert_false("estimated_age_exposed", public_contract["estimated_age_exposed"])
+    assert_false("internal_estimate_exposed", public_contract["internal_estimate_exposed"])
     assert_false("raw_confidence_exposed", public_contract["raw_confidence_exposed"])
     assert_false("legacy_cred_score_exposed", public_contract["legacy_cred_score_exposed"])
 

@@ -10,11 +10,9 @@ class ThresholdPolicy(BaseModel):
     majority_country: str | None
 
 
-class ModelInfo(BaseModel):
-    face_detector: str
-    age_estimator: str
-    age_model_path: str
-    face_detection_model_path: str
+class EngineInfo(BaseModel):
+    input_analyzer: str
+    inference_engine: str
 
 
 class SpoofCheck(BaseModel):
@@ -24,7 +22,7 @@ class SpoofCheck(BaseModel):
 
 
 class CredDecisionScoreFactors(BaseModel):
-    model_confidence: Literal["high", "medium", "low", "none"]
+    signal_quality: Literal["high", "medium", "low", "none"]
     threshold_separation: Literal["high", "medium", "low", "none"]
 
 
@@ -37,7 +35,7 @@ class CredDecisionScore(BaseModel):
 class PrivacyMetadata(BaseModel):
     image_stored: bool
     biometric_template_stored: bool
-    estimated_age_exposed: bool
+    internal_estimate_exposed: bool
     processing: Literal["ephemeral"]
     zk_ready: bool
 
@@ -49,7 +47,7 @@ class ProofMetadata(BaseModel):
     threshold: ThresholdPolicy
 
 
-class AgeDecisionResponse(BaseModel):
+class DecisionResponse(BaseModel):
     request_id: str
     correlation_id: str
 
@@ -68,11 +66,11 @@ class AgeDecisionResponse(BaseModel):
     proof: ProofMetadata
 
     rejection_reason: Literal[
-        "low_confidence",
+        "low_signal_quality",
         "threshold_uncertain",
         "no_face",
         "multiple_faces",
         None,
     ]
 
-    model_info: ModelInfo
+    engine_info: EngineInfo

@@ -8,7 +8,7 @@ client = TestClient(app)
 
 
 def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
-    async def fake_estimate(**kwargs):
+    async def fake_run(**kwargs):
         threshold = {
             "type": "minimum_age",
             "value": 18,
@@ -20,7 +20,7 @@ def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
             "score": 0.0,
             "level": "none",
             "factors": {
-                "model_confidence": "none",
+                "signal_quality": "none",
                 "threshold_separation": "none",
             },
         }
@@ -42,7 +42,7 @@ def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
             "privacy": {
                 "image_stored": False,
                 "biometric_template_stored": False,
-                "estimated_age_exposed": False,
+                "internal_estimate_exposed": False,
                 "processing": "ephemeral",
                 "zk_ready": True,
             },
@@ -53,17 +53,13 @@ def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
                 "threshold": threshold,
             },
             "rejection_reason": "no_face",
-            "model_info": {
-                "face_detector": "YuNet",
-                "age_estimator": "age-gender-prediction-ONNX",
-                "age_model_path": "models/age_estimation/age-gender-prediction-ONNX.onnx",
-                "face_detection_model_path": (
-                    "models/face_detection/face_detection_yunet_2023mar.onnx"
-                ),
+            "engine_info": {
+                "input_analyzer": "YuNet",
+                "inference_engine": "age-gender-prediction-ONNX",
             },
         }
 
-    monkeypatch.setattr("app.api.routes.age_estimation_service.estimate", fake_estimate)
+    monkeypatch.setattr("app.api.routes.decision_pipeline.run", fake_run)
 
     response = client.post(
         "/estimate",
@@ -85,7 +81,7 @@ def test_estimate_propagates_request_id_and_correlation_id(monkeypatch):
     assert payload["decision"] == "uncertain"
     assert payload["cred_decision_score"]["level"] == "none"
 
-    assert "estimated_age" not in payload
-    assert "confidence" not in payload
+    assert "internal_estimate" not in payload
+    assert "signal_quality_score" not in payload
     assert "is_adult" not in payload
     assert "cred_score" not in payload

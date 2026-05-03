@@ -1,0 +1,34 @@
+DECISION_MATCH = "match"
+DECISION_NO_MATCH = "no_match"
+DECISION_UNCERTAIN = "uncertain"
+
+REJECTION_LOW_SIGNAL_QUALITY = "low_signal_quality"
+REJECTION_THRESHOLD_UNCERTAIN = "threshold_uncertain"
+REJECTION_NO_FACE = "no_face"
+REJECTION_MULTIPLE_FACES = "multiple_faces"
+
+SCORE_LEVEL_HIGH = "high"
+SCORE_LEVEL_MEDIUM = "medium"
+SCORE_LEVEL_LOW = "low"
+SCORE_LEVEL_NONE = "none"
+
+THRESHOLD_POLICY_TYPE_MINIMUM_AGE = "minimum_age"
+
+THRESHOLD_SOURCE_EXPLICIT = "explicit"
+THRESHOLD_SOURCE_MAJORITY_COUNTRY = "majority_country"
+THRESHOLD_SOURCE_DEFAULT = "default"
+
+SPOOF_CHECK_STATUS_REQUIRED = "required"
+
+PROCESSING_EPHEMERAL = "ephemeral"
+
+PROOF_TYPE_NONE = "none"
+PROOF_TYPE_ZK_READY = "zk-ready"
+
+PROOF_STATUS_DISABLED = "disabled"
+PROOF_STATUS_NOT_GENERATED = "not_generated"
+
+PROOF_CLAIM_AGE_OVER_THRESHOLD = "age_over_threshold"
+
+LOG_EVENT_AGE_DECISION_COMPLETED = "age_decision_completed"
+ENGINE_UNKNOWN = "unknown"

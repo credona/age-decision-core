@@ -47,6 +47,6 @@ def test_privacy_metadata_is_ephemeral():
 
     assert result["image_stored"] is False
     assert result["biometric_template_stored"] is False
-    assert result["estimated_age_exposed"] is False
+    assert result["internal_estimate_exposed"] is False
     assert result["processing"] == "ephemeral"
     assert result["zk_ready"] is True

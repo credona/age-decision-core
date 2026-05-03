@@ -5,7 +5,7 @@ import cv2
 from app.infrastructure.config.settings import settings
 
 
-class FaceDetector:
+class OpenCvInputAnalyzer:
     """
     Detects faces using the YuNet ONNX face detector.
     """
@@ -56,7 +56,6 @@ class FaceDetector:
 
     def get_status(self) -> dict:
         return {
-            "model": "YuNet",
-            "model_path": self.model_path,
+            "engine": "opencv-yunet",
             "loaded": self.detector is not None,
         }

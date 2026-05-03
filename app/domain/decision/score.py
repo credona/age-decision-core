@@ -1,8 +1,17 @@
+from app.domain.decision.constants import (
+    DECISION_UNCERTAIN,
+    SCORE_LEVEL_HIGH,
+    SCORE_LEVEL_LOW,
+    SCORE_LEVEL_MEDIUM,
+    SCORE_LEVEL_NONE,
+)
+
+
 class CredScoreCalculator:
     """
     Computes a normalized credibility score for an age threshold decision.
 
-    The score does not expose raw estimated age, raw confidence, or threshold
+    The score does not expose raw estimated age, raw signal_quality_score, or threshold
     distance. It only exposes categorical factors to preserve the privacy-first
     public contract.
     """
@@ -10,74 +19,78 @@ class CredScoreCalculator:
     def compute(
         self,
         decision: str,
-        confidence: float | None,
-        estimated_age: float | None,
+        signal_quality_score: float | None,
+        internal_estimate: float | None,
         threshold: int,
         margin: int,
     ) -> dict:
-        if decision == "uncertain" or confidence is None or estimated_age is None:
+        if (
+            decision == DECISION_UNCERTAIN
+            or signal_quality_score is None
+            or internal_estimate is None
+        ):
             return {
                 "score": 0.0,
-                "level": "none",
+                "level": SCORE_LEVEL_NONE,
                 "factors": {
-                    "model_confidence": self._confidence_level(confidence),
-                    "threshold_separation": "none",
+                    "signal_quality": self._signal_quality_level(signal_quality_score),
+                    "threshold_separation": SCORE_LEVEL_NONE,
                 },
             }
 
-        distance = abs(estimated_age - threshold)
+        distance = abs(internal_estimate - threshold)
 
         if margin <= 0:
             distance_factor = 1.0
         else:
             distance_factor = min(distance / (margin * 3), 1.0)
 
-        score = round((confidence * 0.7) + (distance_factor * 0.3), 4)
+        score = round((signal_quality_score * 0.7) + (distance_factor * 0.3), 4)
 
         return {
             "score": score,
             "level": self._score_level(score),
             "factors": {
-                "model_confidence": self._confidence_level(confidence),
+                "signal_quality": self._signal_quality_level(signal_quality_score),
                 "threshold_separation": self._separation_level(distance_factor),
             },
         }
 
     def _score_level(self, score: float) -> str:
         if score >= 0.85:
-            return "high"
+            return SCORE_LEVEL_HIGH
 
         if score >= 0.65:
-            return "medium"
+            return SCORE_LEVEL_MEDIUM
 
         if score > 0:
-            return "low"
+            return SCORE_LEVEL_LOW
 
-        return "none"
+        return SCORE_LEVEL_NONE
 
-    def _confidence_level(self, confidence: float | None) -> str:
-        if confidence is None:
-            return "none"
+    def _signal_quality_level(self, signal_quality_score: float | None) -> str:
+        if signal_quality_score is None:
+            return SCORE_LEVEL_NONE
 
-        if confidence >= 0.85:
-            return "high"
+        if signal_quality_score >= 0.85:
+            return SCORE_LEVEL_HIGH
 
-        if confidence >= 0.65:
-            return "medium"
+        if signal_quality_score >= 0.65:
+            return SCORE_LEVEL_MEDIUM
 
-        if confidence > 0:
-            return "low"
+        if signal_quality_score > 0:
+            return SCORE_LEVEL_LOW
 
-        return "none"
+        return SCORE_LEVEL_NONE
 
     def _separation_level(self, distance_factor: float) -> str:
         if distance_factor >= 0.85:
-            return "high"
+            return SCORE_LEVEL_HIGH
 
         if distance_factor >= 0.5:
-            return "medium"
+            return SCORE_LEVEL_MEDIUM
 
         if distance_factor > 0:
-            return "low"
+            return SCORE_LEVEL_LOW
 
-        return "none"
+        return SCORE_LEVEL_NONE

@@ -1,5 +1,12 @@
-from app.application.ports.age_predictor import AgePredictorPort
-from app.application.ports.face_detector import FaceDetectorPort
+from app.application.ports.inference_engine import InferenceEnginePort
+from app.application.ports.input_analyzer import InputAnalyzerPort
+from app.domain.decision.constants import (
+    DECISION_UNCERTAIN,
+    ENGINE_UNKNOWN,
+    LOG_EVENT_AGE_DECISION_COMPLETED,
+    SPOOF_CHECK_STATUS_REQUIRED,
+    THRESHOLD_POLICY_TYPE_MINIMUM_AGE,
+)
 from app.domain.decision.policy import DecisionPolicy
 from app.domain.decision.score import CredScoreCalculator
 from app.domain.policies.country_rules import CountryRules
@@ -12,7 +19,7 @@ from app.infrastructure.vision.face_preprocessor import FacePreprocessor
 from app.infrastructure.vision.opencv_image_loader import load_image_from_bytes
 
 
-class AgeEstimationService:
+class DecisionPipeline:
     """
     Application service (orchestration).
 
@@ -21,12 +28,12 @@ class AgeEstimationService:
 
     def __init__(
         self,
-        age_predictor: AgePredictorPort,
-        face_detector: FaceDetectorPort,
+        inference_engine: InferenceEnginePort,
+        input_analyzer: InputAnalyzerPort,
     ):
         self.default_age_threshold = settings.age_threshold
         self.default_age_margin = settings.age_margin
-        self.default_confidence_threshold = settings.confidence_threshold
+        self.default_signal_quality_threshold = settings.signal_quality_threshold
 
         self.country_rules = CountryRules()
         self.decision_policy = DecisionPolicy()
@@ -34,20 +41,20 @@ class AgeEstimationService:
         self.privacy_builder = PrivacyMetadataBuilder()
         self.proof_builder = ProofMetadataBuilder()
 
-        self.face_detector = face_detector
+        self.input_analyzer = input_analyzer
         self.face_cropper = FaceCropper()
-        self.face_preprocessor = FacePreprocessor()
-        self.age_predictor = age_predictor
+        self.input_preprocessor = FacePreprocessor()
+        self.inference_engine = inference_engine
 
         self.logger = get_logger()
 
-    def get_model_status(self) -> dict:
+    def get_engine_status(self) -> dict:
         return {
-            "face_detection": self.face_detector.get_status(),
-            "age_estimation": self.age_predictor.get_status(),
+            "input_analysis": self.input_analyzer.get_status(),
+            "inference": self.inference_engine.get_status(),
         }
 
-    async def estimate(
+    async def run(
         self,
         image_bytes: bytes,
         content_type: str | None,
@@ -71,7 +78,7 @@ class AgeEstimationService:
 
         image = load_image_from_bytes(image_bytes)
 
-        faces = self.face_detector.detect(image)
+        faces = self.input_analyzer.detect(image)
         face_count = len(faces)
 
         if face_count == 0:
@@ -83,22 +90,22 @@ class AgeEstimationService:
             )
 
         face = self.face_cropper.crop(image, faces)
-        face_tensor = self.face_preprocessor.preprocess(face)
+        prepared_input = self.input_preprocessor.preprocess(face)
 
-        estimated_age, confidence = self.age_predictor.predict(face_tensor)
+        internal_estimate, signal_quality_score = self.inference_engine.predict(prepared_input)
 
         decision, rejection_reason = self.decision_policy.compute(
-            age=estimated_age,
-            confidence=confidence,
+            age=internal_estimate,
+            signal_quality_score=signal_quality_score,
             threshold=threshold_value,
             margin=self.default_age_margin,
-            confidence_threshold=self.default_confidence_threshold,
+            signal_quality_threshold=self.default_signal_quality_threshold,
         )
 
         cred_decision_score = self.cred_score_calculator.compute(
             decision=decision,
-            confidence=confidence,
-            estimated_age=estimated_age,
+            signal_quality_score=signal_quality_score,
+            internal_estimate=internal_estimate,
             threshold=threshold_value,
             margin=self.default_age_margin,
         )
@@ -121,7 +128,7 @@ class AgeEstimationService:
                 threshold=threshold,
             ),
             "rejection_reason": rejection_reason,
-            "model_info": self._build_model_info(),
+            "engine_info": self._build_engine_info(),
         }
 
         self._log(response)
@@ -148,23 +155,21 @@ class AgeEstimationService:
 
     def _build_threshold_policy(self, value, source, majority_country):
         return {
-            "type": "minimum_age",
+            "type": THRESHOLD_POLICY_TYPE_MINIMUM_AGE,
             "value": value,
             "source": source,
             "majority_country": majority_country.upper() if majority_country else None,
         }
 
-    def _build_model_info(self):
+    def _build_engine_info(self):
         return {
-            "face_detector": "YuNet",
-            "age_estimator": "age-gender-prediction-ONNX",
-            "age_model_path": settings.age_model_path,
-            "face_detection_model_path": settings.face_detection_model_path,
+            "input_analyzer": self.input_analyzer.get_status().get("engine", ENGINE_UNKNOWN),
+            "inference_engine": self.inference_engine.get_status().get("engine", ENGINE_UNKNOWN),
         }
 
     def _build_spoof_check(self):
         return {
-            "status": "required",
+            "status": SPOOF_CHECK_STATUS_REQUIRED,
             "passed": None,
             "provider": None,
         }
@@ -173,7 +178,7 @@ class AgeEstimationService:
         return {
             "request_id": request_id,
             "correlation_id": correlation_id,
-            "decision": "uncertain",
+            "decision": DECISION_UNCERTAIN,
             "threshold": threshold,
             "face_detected": face_count > 0,
             "face_count": face_count,
@@ -181,8 +186,8 @@ class AgeEstimationService:
             "spoof_check": self._build_spoof_check(),
             "cred_decision_score": self.cred_score_calculator.compute(
                 decision="uncertain",
-                confidence=None,
-                estimated_age=None,
+                signal_quality_score=None,
+                internal_estimate=None,
                 threshold=threshold["value"],
                 margin=self.default_age_margin,
             ),
@@ -194,14 +199,14 @@ class AgeEstimationService:
                 threshold=threshold,
             ),
             "rejection_reason": reason,
-            "model_info": self._build_model_info(),
+            "engine_info": self._build_engine_info(),
         }
 
     def _log(self, response: dict) -> None:
         log_event(
             self.logger,
             {
-                "event": "age_decision_completed",
+                "event": LOG_EVENT_AGE_DECISION_COMPLETED,
                 "decision": response["decision"],
                 "face_count": response["face_count"],
             },

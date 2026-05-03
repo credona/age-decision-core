@@ -32,7 +32,7 @@ Internal implementation details are not stable unless explicitly documented.
 ```text
 GET /health
 GET /version
-GET /model/status
+GET /engine/status
 POST /estimate
 GET /openapi.json
 ```
@@ -93,7 +93,7 @@ Generated view:
     "age-decision-js": ">=2.0.0 <3.0.0"
   },
   "public_contract": {
-    "estimated_age_exposed": false,
+    "internal_estimate_exposed": false,
     "raw_confidence_exposed": false,
     "legacy_cred_score_exposed": false,
     "score_field": "cred_decision_score",
@@ -235,7 +235,7 @@ Compatibility is checked through:
 v2.3.0 contract governance coverage also verifies:
 
 - stable status contract for `GET /health`
-- stable status contract for `GET /model/status`
+- stable status contract for `GET /engine/status`
 - standardized ErrorResponse shape for public validation errors
 - missing multipart file mapped to `missing_file` with HTTP 400
 - privacy-first forbidden public fields remain forbidden (`estimated_age`, `confidence`, `is_adult`, `cred_score`)

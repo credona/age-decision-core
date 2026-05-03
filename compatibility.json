@@ -7,7 +7,7 @@
     "age-decision-js": ">=2.0.0 <3.0.0"
   },
   "public_contract": {
-    "estimated_age_exposed": false,
+    "internal_estimate_exposed": false,
     "raw_confidence_exposed": false,
     "legacy_cred_score_exposed": false,
     "score_field": "cred_decision_score",
