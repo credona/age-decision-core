@@ -138,7 +138,7 @@ Model behavior may vary depending on:
 
 <h2>Operational transparency</h2>
 
-The `/model/status` endpoint exposes model runtime metadata.
+The `/engine/status` endpoint exposes model runtime metadata.
 
 It allows integrators to inspect:
 

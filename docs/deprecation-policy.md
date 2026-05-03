@@ -18,7 +18,7 @@ Privacy-first guarantees supersede versioning convenience: unintended exposure p
 
 - Documented endpoints, request constraints, response JSON shapes documented in compatibility and repository docs.
 
-- Stable status responses for <code>/health</code>, <code>/model/status</code>, and <code>/version</code> as described in <code>docs/status-contract.md</code>.
+- Stable status responses for <code>/health</code>, <code>/engine/status</code>, and <code>/version</code> as described in <code>docs/status-contract.md</code>.
 
 Internal implementation details—module layout, private helpers, timings, ONNX session layouts used only behind contract tests—not part of this policy.
 

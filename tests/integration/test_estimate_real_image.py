@@ -25,7 +25,7 @@ def test_estimate_with_real_image():
     assert payload["face_detected"] is True
     assert payload["cred_decision_score"]["score"] >= 0
 
-    assert "estimated_age" not in payload
-    assert "confidence" not in payload
+    assert "internal_estimate" not in payload
+    assert "signal_quality_score" not in payload
     assert "is_adult" not in payload
     assert "cred_score" not in payload

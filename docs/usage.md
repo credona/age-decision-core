@@ -31,7 +31,7 @@ docker compose --env-file .generated/compose/dev.env -f docker-compose.dev.yml d
 ```bash
 curl -i http://localhost:8000/health
 curl -i http://localhost:8000/version
-curl -i http://localhost:8000/model/status
+curl -i http://localhost:8000/engine/status
 ```
 
 Expected health response:
@@ -41,8 +41,8 @@ Expected health response:
 {
   "status": "ok",
   "service": "age-decision-core",
-  "version": "2.3.0",
-  "contract_version": "2.3"
+  "version": "2.4.0",
+  "contract_version": "2.4"
 }
 ```
 <!-- END:HEALTH_RESPONSE -->
@@ -54,8 +54,8 @@ Expected version response:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.3.0",
-  "contract_version": "2.3",
+  "version": "2.4.0",
+  "contract_version": "2.4",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
 }
@@ -168,14 +168,14 @@ Run validation only:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.3.0",
-  "contract_version": "2.3",
+  "version": "2.4.0",
+  "contract_version": "2.4",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"
   },
   "public_contract": {
-    "estimated_age_exposed": false,
+    "internal_estimate_exposed": false,
     "raw_confidence_exposed": false,
     "legacy_cred_score_exposed": false,
     "score_field": "cred_decision_score",

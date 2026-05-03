@@ -19,7 +19,7 @@ def main() -> None:
             "age-decision-js": f">={major_version}.0.0 <{int(major_version) + 1}.0.0",
         },
         "public_contract": {
-            "estimated_age_exposed": False,
+            "internal_estimate_exposed": False,
             "raw_confidence_exposed": False,
             "legacy_cred_score_exposed": False,
             "score_field": "cred_decision_score",

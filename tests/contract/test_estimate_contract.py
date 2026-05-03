@@ -1,7 +1,7 @@
 from io import BytesIO
 from unittest.mock import AsyncMock
 
-from app.api.routes import age_estimation_service
+from app.api.routes import decision_pipeline
 
 
 def test_estimate_response_contains_privacy_first_cred_decision_score(client):
@@ -9,7 +9,7 @@ def test_estimate_response_contains_privacy_first_cred_decision_score(client):
         "score": 0.86,
         "level": "high",
         "factors": {
-            "model_confidence": "medium",
+            "signal_quality": "medium",
             "threshold_separation": "high",
         },
     }
@@ -21,7 +21,7 @@ def test_estimate_response_contains_privacy_first_cred_decision_score(client):
         "majority_country": "FR",
     }
 
-    age_estimation_service.estimate = AsyncMock(
+    decision_pipeline.run = AsyncMock(
         return_value={
             "request_id": "test-request-001",
             "correlation_id": "test-request-001",
@@ -39,7 +39,7 @@ def test_estimate_response_contains_privacy_first_cred_decision_score(client):
             "privacy": {
                 "image_stored": False,
                 "biometric_template_stored": False,
-                "estimated_age_exposed": False,
+                "internal_estimate_exposed": False,
                 "processing": "ephemeral",
                 "zk_ready": True,
             },
@@ -50,13 +50,9 @@ def test_estimate_response_contains_privacy_first_cred_decision_score(client):
                 "threshold": threshold,
             },
             "rejection_reason": None,
-            "model_info": {
-                "face_detector": "YuNet",
-                "age_estimator": "age-gender-prediction-ONNX",
-                "age_model_path": "models/age_estimation/age-gender-prediction-ONNX.onnx",
-                "face_detection_model_path": (
-                    "models/face_detection/face_detection_yunet_2023mar.onnx"
-                ),
+            "engine_info": {
+                "input_analyzer": "YuNet",
+                "inference_engine": "age-gender-prediction-ONNX",
             },
         }
     )
@@ -76,9 +72,9 @@ def test_estimate_response_contains_privacy_first_cred_decision_score(client):
     assert payload["cred_decision_score"] == score
     assert payload["decision"] == "match"
     assert payload["threshold"] == threshold
-    assert payload["privacy"]["estimated_age_exposed"] is False
+    assert payload["privacy"]["internal_estimate_exposed"] is False
 
-    assert "estimated_age" not in payload
-    assert "confidence" not in payload
+    assert "internal_estimate" not in payload
+    assert "signal_quality_score" not in payload
     assert "is_adult" not in payload
     assert "cred_score" not in payload

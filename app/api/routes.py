@@ -4,22 +4,43 @@ from fastapi import APIRouter, File, Header, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.api.constants import (
+    API_STATUS_OK,
+    ERROR_EMPTY_FILE,
+    ERROR_INVALID_REQUEST,
+    ERROR_MISSING_FILE,
+    ERROR_UNSUPPORTED_FILE_TYPE,
+    LOG_EVENT_AGE_DECISION_FAILED,
+    LOG_LEVEL_WARNING,
+)
+from app.api.input_validator import UnsupportedInputTypeError, validate_input_type
+from app.api.response_filter import filter_decision_response
+from app.application.dto.estimate_command import EstimateCommand
+from app.application.use_cases.decision_pipeline import DecisionPipeline
+from app.application.use_cases.get_model_status import GetEngineStatusUseCase
+from app.application.use_cases.run_decision import RunDecisionUseCase
+from app.infrastructure.logging.safe_logger import get_logger, log_event
+from app.infrastructure.models.onnx_inference_engine import OnnxInferenceEngine
+from app.infrastructure.vision.opencv_input_analyzer import OpenCvInputAnalyzer
 from app.project import project_metadata
+from app.schemas.decision import DecisionResponse
 from app.schemas.error import ErrorResponse
-from app.schemas.estimate import AgeDecisionResponse
-from app.services.age_estimation_service import AgeEstimationService
-from app.utils.logger import get_logger, log_event
 
 router = APIRouter()
 
-age_estimation_service = AgeEstimationService()
+decision_pipeline = DecisionPipeline(
+    inference_engine=OnnxInferenceEngine(),
+    input_analyzer=OpenCvInputAnalyzer(),
+)
+run_decision_use_case = RunDecisionUseCase(decision_pipeline)
+get_engine_status_use_case = GetEngineStatusUseCase(decision_pipeline)
 logger = get_logger("age_decision_api")
 
 
 @router.get("/health")
 def health():
     return {
-        "status": "ok",
+        "status": API_STATUS_OK,
         "service": project_metadata.service_name,
         "version": project_metadata.version,
         "contract_version": project_metadata.contract_version,
@@ -31,14 +52,14 @@ def version():
     return project_metadata.model_dump()
 
 
-@router.get("/model/status")
+@router.get("/engine/status")
 def model_status():
-    return age_estimation_service.get_model_status()
+    return get_engine_status_use_case.execute()
 
 
 @router.post(
     "/estimate",
-    response_model=AgeDecisionResponse,
+    response_model=DecisionResponse,
     responses={
         400: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
@@ -47,6 +68,7 @@ def model_status():
 async def estimate_age(
     file: UploadFile = File(...),
     age_threshold: int | None = Query(default=None),
+    input_type: str = Query(default="image"),
     majority_country: str | None = Query(default=None),
     x_request_id: str | None = Header(default=None),
     x_correlation_id: str | None = Header(default=None),
@@ -57,15 +79,38 @@ async def estimate_age(
     )
 
     try:
-        result = await age_estimation_service.estimate(
-            file=file,
-            request_id=request_id,
-            correlation_id=correlation_id,
-            age_threshold=age_threshold,
-            majority_country=majority_country,
+        validate_input_type(input_type)
+
+        image_bytes = await file.read()
+
+        result = await run_decision_use_case.execute(
+            EstimateCommand(
+                image_bytes=image_bytes,
+                content_type=file.content_type,
+                request_id=request_id,
+                correlation_id=correlation_id,
+                age_threshold=age_threshold,
+                majority_country=majority_country,
+            )
         )
 
-        return AgeDecisionResponse(**result)
+        return filter_decision_response(result)
+
+    except UnsupportedInputTypeError as exc:
+        _log_error(
+            request_id=request_id,
+            correlation_id=correlation_id,
+            error_type="validation_error",
+            error_code="UNSUPPORTED_INPUT_TYPE",
+        )
+
+        return _error_response(
+            status_code=400,
+            request_id=request_id,
+            correlation_id=correlation_id,
+            code="UNSUPPORTED_INPUT_TYPE",
+            message=str(exc),
+        )
 
     except ValueError as exc:
         error_code = _map_value_error_code(str(exc))
@@ -158,12 +203,12 @@ def _map_value_error_code(message: str) -> str:
     normalized = message.lower()
 
     if "empty file" in normalized:
-        return "empty_file"
+        return ERROR_EMPTY_FILE
 
     if "unsupported file type" in normalized:
-        return "unsupported_file_type"
+        return ERROR_UNSUPPORTED_FILE_TYPE
 
-    return "invalid_request"
+    return ERROR_INVALID_REQUEST
 
 
 def _map_validation_error_code(errors: list[dict]) -> str:
@@ -172,9 +217,9 @@ def _map_validation_error_code(errors: list[dict]) -> str:
         error_type = error.get("type", "")
 
         if "file" in loc and error_type in {"missing", "value_error.missing"}:
-            return "missing_file"
+            return ERROR_MISSING_FILE
 
-    return "invalid_request"
+    return ERROR_INVALID_REQUEST
 
 
 def _log_error(
@@ -186,8 +231,8 @@ def _log_error(
     log_event(
         logger,
         {
-            "level": "warning",
-            "event": "age_decision_failed",
+            "level": LOG_LEVEL_WARNING,
+            "event": LOG_EVENT_AGE_DECISION_FAILED,
             "request_id": request_id,
             "correlation_id": correlation_id,
             "error_type": error_type,

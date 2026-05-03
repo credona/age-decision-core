@@ -4,6 +4,22 @@ This changelog tracks changes specific to Age Decision Core.
 
 Global project direction is tracked in the central Age Decision repository.
 
+<h2>2.4.0</h2>
+
+<ul>
+  <li>Introduced clean architecture boundaries across internal layers.</li>
+  <li>Added privacy-safe logging tests covering image, base64, raw payload, scores, thresholds, and downstream data leakage.</li>
+  <li>Added deterministic rejection for unsupported v3 input types: image_sequence and video.</li>
+  <li>Replaced age-oriented internals with neutral decision pipeline terminology.</li>
+  <li>Moved predictor and face detector adapters behind inference engine and input analyzer ports.</li>
+  <li>Centralized decision, score, proof, privacy, and API constants to reduce magic strings.</li>
+  <li>Updated public documentation from model status terminology to engine status terminology.</li>
+  <li>Preserved the existing public API contract and privacy-first forbidden field checks.</li>
+  <li>Validated the refactor through Docker CI-equivalent checks.</li>
+</ul>
+
+<hr>
+
 <h2>2.3.0</h2>
 
 <ul>

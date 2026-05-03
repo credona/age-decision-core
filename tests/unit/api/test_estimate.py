@@ -11,7 +11,7 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
         "score": 0.86,
         "level": "high",
         "factors": {
-            "model_confidence": "medium",
+            "signal_quality": "medium",
             "threshold_separation": "high",
         },
     }
@@ -23,7 +23,7 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
         "majority_country": "FR",
     }
 
-    mock_estimate = AsyncMock(
+    mock_run = AsyncMock(
         return_value={
             "request_id": expected_request_id,
             "correlation_id": expected_request_id,
@@ -41,7 +41,7 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
             "privacy": {
                 "image_stored": False,
                 "biometric_template_stored": False,
-                "estimated_age_exposed": False,
+                "internal_estimate_exposed": False,
                 "processing": "ephemeral",
                 "zk_ready": True,
             },
@@ -52,18 +52,14 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
                 "threshold": threshold,
             },
             "rejection_reason": None,
-            "model_info": {
-                "face_detector": "YuNet",
-                "age_estimator": "age-gender-prediction-ONNX",
-                "age_model_path": "models/age_estimation/age-gender-prediction-ONNX.onnx",
-                "face_detection_model_path": (
-                    "models/face_detection/face_detection_yunet_2023mar.onnx"
-                ),
+            "engine_info": {
+                "input_analyzer": "YuNet",
+                "inference_engine": "age-gender-prediction-ONNX",
             },
         }
     )
 
-    monkeypatch.setattr(routes.age_estimation_service, "estimate", mock_estimate)
+    monkeypatch.setattr(routes.decision_pipeline, "run", mock_run)
 
     response = client.post(
         "/estimate?majority_country=FR",
@@ -84,12 +80,12 @@ def test_estimate_returns_request_id_from_header(client, monkeypatch):
     assert payload["threshold"]["majority_country"] == "FR"
     assert payload["cred_decision_score"]["level"] == "high"
     assert payload["privacy"]["image_stored"] is False
-    assert payload["privacy"]["estimated_age_exposed"] is False
+    assert payload["privacy"]["internal_estimate_exposed"] is False
     assert payload["proof"]["type"] == "zk-ready"
 
-    assert "estimated_age" not in payload
-    assert "confidence" not in payload
+    assert "internal_estimate" not in payload
+    assert "signal_quality_score" not in payload
     assert "is_adult" not in payload
     assert "cred_score" not in payload
 
-    mock_estimate.assert_awaited_once()
+    mock_run.assert_awaited_once()

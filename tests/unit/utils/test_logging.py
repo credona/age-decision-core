@@ -1,7 +1,7 @@
 import json
 import logging
 
-from app.utils.logger import log_event
+from app.infrastructure.logging.safe_logger import log_event
 
 
 def test_log_event_outputs_valid_json(caplog):

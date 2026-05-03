@@ -1,4 +1,4 @@
-from app.policies.country_rules import CountryRules
+from app.domain.policies.country_rules import CountryRules
 
 
 def test_country_threshold_known():

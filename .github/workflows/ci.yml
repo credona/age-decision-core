@@ -195,7 +195,7 @@ jobs:
         run: |
           curl -fsS http://localhost:8000/health
           curl -fsS http://localhost:8000/version
-          curl -fsS http://localhost:8000/model/status
+          curl -fsS http://localhost:8000/engine/status
 
       - name: Cleanup Docker resources
         if: always()
