@@ -19,19 +19,34 @@ from app.application.dto.estimate_command import EstimateCommand
 from app.application.use_cases.decision_pipeline import DecisionPipeline
 from app.application.use_cases.get_model_status import GetEngineStatusUseCase
 from app.application.use_cases.run_decision import RunDecisionUseCase
+from app.infrastructure.logging.safe_event_logger import SafeEventLogger
 from app.infrastructure.logging.safe_logger import get_logger, log_event
 from app.infrastructure.models.onnx_inference_engine import OnnxInferenceEngine
+from app.infrastructure.vision.face_cropper import FaceCropper
+from app.infrastructure.vision.face_preprocessor import FacePreprocessor
+from app.infrastructure.vision.opencv_image_loader import load_image_from_bytes
 from app.infrastructure.vision.opencv_input_analyzer import OpenCvInputAnalyzer
 from app.project import project_metadata
 from app.schemas.decision import DecisionResponse
 from app.schemas.error import ErrorResponse
+
+
+class OpenCvImageDecoder:
+    def decode(self, image_bytes: bytes):
+        return load_image_from_bytes(image_bytes)
+
 
 router = APIRouter()
 
 decision_pipeline = DecisionPipeline(
     inference_engine=OnnxInferenceEngine(),
     input_analyzer=OpenCvInputAnalyzer(),
+    image_decoder=OpenCvImageDecoder(),
+    face_cropper=FaceCropper(),
+    input_preprocessor=FacePreprocessor(),
+    event_logger=SafeEventLogger(),
 )
+
 run_decision_use_case = RunDecisionUseCase(decision_pipeline)
 get_engine_status_use_case = GetEngineStatusUseCase(decision_pipeline)
 logger = get_logger("age_decision_api")
@@ -80,7 +95,6 @@ async def estimate_age(
 
     try:
         validate_input_type(input_type)
-
         image_bytes = await file.read()
 
         result = await run_decision_use_case.execute(
@@ -103,7 +117,6 @@ async def estimate_age(
             error_type="validation_error",
             error_code="UNSUPPORTED_INPUT_TYPE",
         )
-
         return _error_response(
             status_code=400,
             request_id=request_id,
@@ -114,14 +127,12 @@ async def estimate_age(
 
     except ValueError as exc:
         error_code = _map_value_error_code(str(exc))
-
         _log_error(
             request_id=request_id,
             correlation_id=correlation_id,
             error_type="validation_error",
             error_code=error_code,
         )
-
         return _error_response(
             status_code=400,
             request_id=request_id,
@@ -137,7 +148,6 @@ async def estimate_age(
             error_type="runtime_error",
             error_code="model_runtime_error",
         )
-
         return _error_response(
             status_code=500,
             request_id=request_id,

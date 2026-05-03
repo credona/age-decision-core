@@ -19,6 +19,10 @@ CHANGELOG_PATH = Path("CHANGELOG.md")
 MANAGED_VERSION = "2.5.0"
 
 CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
+    "Introduced strict application ports for image decoding, preprocessing, and logging isolation.",
+    "Removed runtime scoring parameters from configuration and enforced scoring policy isolation.",
+    "Hardened engine status contract with normalized input_analysis and inference sections.",
+    "Improved error handling for unsupported input types with deterministic messaging.",
     "Introduced model metadata and registry abstractions for age estimation "
     "and face detection models.",
     "Replaced low-level runtime model paths with stable model identifiers.",

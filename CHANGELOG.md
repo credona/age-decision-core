@@ -7,6 +7,10 @@ Global project direction is tracked in the central Age Decision repository.
 <h2>2.5.0</h2>
 
 <ul>
+  <li>Introduced strict application ports for image decoding, preprocessing, and logging isolation.</li>
+  <li>Removed runtime scoring parameters from configuration and enforced scoring policy isolation.</li>
+  <li>Hardened engine status contract with normalized input_analysis and inference sections.</li>
+  <li>Improved error handling for unsupported input types with deterministic messaging.</li>
   <li>Introduced model metadata and registry abstractions for age estimation and face detection models.</li>
   <li>Replaced low-level runtime model paths with stable model identifiers.</li>
   <li>Simplified runtime configuration with shared common values and empty dev/prod overrides.</li>

@@ -22,10 +22,6 @@ class Settings(BaseSettings):
     use_mock_model: bool = False
     default_signal_quality: float = 0.8
 
-    age_threshold: int = 18
-    age_margin: int = 2
-    signal_quality_threshold: float = 0.7
-
     privacy_mode: bool = True
     enable_zk_ready: bool = True
 
