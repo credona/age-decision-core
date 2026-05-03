@@ -1,4 +1,4 @@
-"""Deterministically maintain the v2.4.0 release section in CHANGELOG.md."""
+"""Deterministically maintain the v2.5.0 release section in CHANGELOG.md."""
 
 from __future__ import annotations
 
@@ -16,19 +16,27 @@ from lib.changelog import (  # noqa: E402
 )
 
 CHANGELOG_PATH = Path("CHANGELOG.md")
-MANAGED_VERSION = "2.4.0"
+MANAGED_VERSION = "2.5.0"
 
 CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
-    "Introduced clean architecture boundaries across internal layers.",
-    "Added privacy-safe logging tests covering image, base64, raw payload, scores, "
-    "thresholds, and downstream data leakage.",
-    "Added deterministic rejection for unsupported v3 input types: image_sequence and video.",
-    "Replaced age-oriented internals with neutral decision pipeline terminology.",
-    "Moved predictor and face detector adapters behind inference engine and input analyzer ports.",
-    "Centralized decision, score, proof, privacy, and API constants to reduce magic strings.",
-    "Updated public documentation from model status terminology to engine status terminology.",
-    "Preserved the existing public API contract and privacy-first forbidden field checks.",
-    "Validated the refactor through Docker CI-equivalent checks.",
+    "Introduced strict application ports for image decoding, preprocessing, and logging isolation.",
+    "Removed runtime scoring parameters from configuration and enforced scoring policy isolation.",
+    "Hardened engine status contract with normalized input_analysis and inference sections.",
+    "Improved error handling for unsupported input types with deterministic messaging.",
+    "Introduced model metadata and registry abstractions for age estimation "
+    "and face detection models.",
+    "Replaced low-level runtime model paths with stable model identifiers.",
+    "Simplified runtime configuration with shared common values and empty dev/prod overrides.",
+    "Moved age threshold, margin, score weights, and signal quality rules into "
+    "a versioned scoring policy.",
+    "Added deterministic scoring policy tests covering score bounds, "
+    "monotonicity, stability, and privacy.",
+    "Documented the public scoring methodology for cred_decision_score.",
+    "Documented model registry, reproducibility metadata, benchmark methodology, "
+    "and dataset transparency.",
+    "Removed threshold logic from runtime configuration.",
+    "Preserved the privacy-first public contract and response filtering guarantees.",
+    "Validated the release through Docker CI-equivalent checks.",
 )
 
 

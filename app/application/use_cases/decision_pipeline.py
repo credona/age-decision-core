@@ -1,5 +1,9 @@
+from app.application.ports.event_logger import EventLoggerPort, NullEventLogger
+from app.application.ports.face_cropper import FaceCropperPort
+from app.application.ports.image_decoder import ImageDecoderPort
 from app.application.ports.inference_engine import InferenceEnginePort
 from app.application.ports.input_analyzer import InputAnalyzerPort
+from app.application.ports.input_preprocessor import InputPreprocessorPort
 from app.domain.decision.constants import (
     DECISION_UNCERTAIN,
     ENGINE_UNKNOWN,
@@ -12,41 +16,32 @@ from app.domain.decision.score import CredScoreCalculator
 from app.domain.policies.country_rules import CountryRules
 from app.domain.privacy.metadata import PrivacyMetadataBuilder
 from app.domain.proof.metadata import ProofMetadataBuilder
-from app.infrastructure.config.settings import settings
-from app.infrastructure.logging.safe_logger import get_logger, log_event
-from app.infrastructure.vision.face_cropper import FaceCropper
-from app.infrastructure.vision.face_preprocessor import FacePreprocessor
-from app.infrastructure.vision.opencv_image_loader import load_image_from_bytes
+from app.domain.scoring.policy import default_age_scoring_policy
 
 
 class DecisionPipeline:
-    """
-    Application service (orchestration).
-
-    Infrastructure dependencies are injected via ports.
-    """
-
     def __init__(
         self,
         inference_engine: InferenceEnginePort,
         input_analyzer: InputAnalyzerPort,
+        image_decoder: ImageDecoderPort,
+        face_cropper: FaceCropperPort,
+        input_preprocessor: InputPreprocessorPort,
+        event_logger: EventLoggerPort | None = None,
     ):
-        self.default_age_threshold = settings.age_threshold
-        self.default_age_margin = settings.age_margin
-        self.default_signal_quality_threshold = settings.signal_quality_threshold
-
+        self.scoring_policy = default_age_scoring_policy()
         self.country_rules = CountryRules()
-        self.decision_policy = DecisionPolicy()
-        self.cred_score_calculator = CredScoreCalculator()
+        self.decision_policy = DecisionPolicy(self.scoring_policy)
+        self.cred_score_calculator = CredScoreCalculator(self.scoring_policy)
         self.privacy_builder = PrivacyMetadataBuilder()
         self.proof_builder = ProofMetadataBuilder()
 
         self.input_analyzer = input_analyzer
-        self.face_cropper = FaceCropper()
-        self.input_preprocessor = FacePreprocessor()
+        self.image_decoder = image_decoder
+        self.face_cropper = face_cropper
+        self.input_preprocessor = input_preprocessor
         self.inference_engine = inference_engine
-
-        self.logger = get_logger()
+        self.event_logger = event_logger or NullEventLogger()
 
     def get_engine_status(self) -> dict:
         return {
@@ -69,15 +64,13 @@ class DecisionPipeline:
             age_threshold=age_threshold,
             majority_country=majority_country,
         )
-
         threshold = self._build_threshold_policy(
             value=threshold_value,
             source=threshold_source,
             majority_country=majority_country,
         )
 
-        image = load_image_from_bytes(image_bytes)
-
+        image = self.image_decoder.decode(image_bytes)
         faces = self.input_analyzer.detect(image)
         face_count = len(faces)
 
@@ -91,15 +84,12 @@ class DecisionPipeline:
 
         face = self.face_cropper.crop(image, faces)
         prepared_input = self.input_preprocessor.preprocess(face)
-
         internal_estimate, signal_quality_score = self.inference_engine.predict(prepared_input)
 
         decision, rejection_reason = self.decision_policy.compute(
             age=internal_estimate,
             signal_quality_score=signal_quality_score,
             threshold=threshold_value,
-            margin=self.default_age_margin,
-            signal_quality_threshold=self.default_signal_quality_threshold,
         )
 
         cred_decision_score = self.cred_score_calculator.compute(
@@ -107,7 +97,6 @@ class DecisionPipeline:
             signal_quality_score=signal_quality_score,
             internal_estimate=internal_estimate,
             threshold=threshold_value,
-            margin=self.default_age_margin,
         )
 
         response = {
@@ -120,19 +109,13 @@ class DecisionPipeline:
             "spoof_check_required": True,
             "spoof_check": self._build_spoof_check(),
             "cred_decision_score": cred_decision_score,
-            "privacy": self.privacy_builder.build(
-                zk_ready=settings.enable_zk_ready,
-            ),
-            "proof": self.proof_builder.build(
-                enabled=settings.enable_zk_ready,
-                threshold=threshold,
-            ),
+            "privacy": self.privacy_builder.build(zk_ready=True),
+            "proof": self.proof_builder.build(enabled=True, threshold=threshold),
             "rejection_reason": rejection_reason,
             "engine_info": self._build_engine_info(),
         }
 
         self._log(response)
-
         return response
 
     def _validate_file(self, content_type: str | None, image_bytes: bytes) -> None:
@@ -147,11 +130,10 @@ class DecisionPipeline:
             return age_threshold, "explicit"
 
         country_threshold = self.country_rules.get_threshold(majority_country)
-
         if country_threshold is not None:
             return country_threshold, "majority_country"
 
-        return self.default_age_threshold, "default"
+        return self.scoring_policy.age_threshold, "default"
 
     def _build_threshold_policy(self, value, source, majority_country):
         return {
@@ -185,29 +167,22 @@ class DecisionPipeline:
             "spoof_check_required": True,
             "spoof_check": self._build_spoof_check(),
             "cred_decision_score": self.cred_score_calculator.compute(
-                decision="uncertain",
+                decision=DECISION_UNCERTAIN,
                 signal_quality_score=None,
                 internal_estimate=None,
                 threshold=threshold["value"],
-                margin=self.default_age_margin,
             ),
-            "privacy": self.privacy_builder.build(
-                zk_ready=settings.enable_zk_ready,
-            ),
-            "proof": self.proof_builder.build(
-                enabled=settings.enable_zk_ready,
-                threshold=threshold,
-            ),
+            "privacy": self.privacy_builder.build(zk_ready=True),
+            "proof": self.proof_builder.build(enabled=True, threshold=threshold),
             "rejection_reason": reason,
             "engine_info": self._build_engine_info(),
         }
 
     def _log(self, response: dict) -> None:
-        log_event(
-            self.logger,
+        self.event_logger.info(
             {
                 "event": LOG_EVENT_AGE_DECISION_COMPLETED,
                 "decision": response["decision"],
                 "face_count": response["face_count"],
-            },
+            }
         )

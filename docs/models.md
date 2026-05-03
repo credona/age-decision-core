@@ -6,6 +6,49 @@ It is intentionally separated from the main README to keep model transparency vi
 
 <hr>
 
+<h2>Model lifecycle policy</h2>
+
+Runtime configuration uses model identifiers as the public operational reference.
+
+Low-level model paths are internal implementation details.
+
+A model entry must define:
+
+<pre>
+model_id
+model_version
+task
+runtime
+scoring_policy_id
+reproducibility metadata
+</pre>
+
+<hr>
+
+<h2>Configured model identifiers</h2>
+
+<h3>Face detection</h3>
+
+<pre>
+model_id: credona.face.yunet.v1
+model_version: 1.0.0
+task: face_detection
+runtime: onnx
+scoring_policy_id: none
+</pre>
+
+<h3>Age estimation</h3>
+
+<pre>
+model_id: credona.age.age-gender-onnx.v1
+model_version: 1.0.0
+task: age_estimation
+runtime: onnx
+scoring_policy_id: credona.age.threshold-margin.v1
+</pre>
+
+<hr>
+
 <h2>Model binary policy</h2>
 
 Model binaries are not intended to be committed to Git.
@@ -14,19 +57,19 @@ Model binaries are not intended to be embedded in the public Docker image by def
 
 Models should be downloaded explicitly when needed:
 
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
-```
+<pre>
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
+</pre>
 
 Expected local structure:
 
-```text
+<pre>
 models/
   age_estimation/
     age-gender-prediction-ONNX.onnx
   face_detection/
     face_detection_yunet_2023mar.onnx
-```
+</pre>
 
 <hr>
 
@@ -34,22 +77,16 @@ models/
 
 <h3>Model</h3>
 
-```text
+<pre>
 YuNet face detection model
-```
-
-Expected path:
-
-```text
-models/face_detection/face_detection_yunet_2023mar.onnx
-```
+</pre>
 
 <h3>Source</h3>
 
-```text
+<pre>
 OpenCV Zoo - YuNet face detection
 https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet
-```
+</pre>
 
 <h3>License note</h3>
 
@@ -69,22 +106,16 @@ The service does not use YuNet for identity recognition.
 
 <h3>Model</h3>
 
-```text
+<pre>
 age-gender-prediction-ONNX.onnx
-```
-
-Expected path:
-
-```text
-models/age_estimation/age-gender-prediction-ONNX.onnx
-```
+</pre>
 
 <h3>Source</h3>
 
-```text
+<pre>
 ONNX Community - age-gender-prediction-ONNX
 https://huggingface.co/onnx-community/age-gender-prediction-ONNX
-```
+</pre>
 
 <h3>License note</h3>
 
@@ -96,18 +127,18 @@ Before redistribution or commercial use, verify the current upstream license, mo
 
 The service supports several ONNX output shapes:
 
-```text
+<pre>
 [batch, 2]    age-gender style output
 [batch, 1]    direct regression output
 [batch, >=80] age distribution output
-```
+</pre>
 
 <h3>Related architecture reference</h3>
 
-```text
+<pre>
 MobileNetV2: Inverted Residuals and Linear Bottlenecks
 https://arxiv.org/abs/1801.04381
-```
+</pre>
 
 <hr>
 
@@ -138,15 +169,24 @@ Model behavior may vary depending on:
 
 <h2>Operational transparency</h2>
 
-The `/engine/status` endpoint exposes model runtime metadata.
+The /engine/status endpoint exposes safe model runtime metadata.
 
 It allows integrators to inspect:
 
-- configured model paths
+- model identifier
+- model version
+- model task
+- runtime
 - loaded status
-- model mode
-- input metadata
-- output metadata
+- scoring policy identifier
+
+It must not expose:
+
+- image paths
+- raw model outputs
+- internal estimates
+- internal thresholds
+- sensitive runtime payloads
 
 <hr>
 
@@ -167,7 +207,7 @@ Before redistributing model binaries, verify:
 
 <h2>Current project stance</h2>
 
-Age Decision Core documents supported model paths and provides a download script.
+Age Decision Core documents supported model identifiers and provides a download script.
 
 The repository should not rely on committed model binaries.
 

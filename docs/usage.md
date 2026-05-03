@@ -8,31 +8,31 @@ This document describes how to run and use Age Decision Core.
 
 Start the development environment:
 
-```bash
+<pre>
 ./scripts/docker/dev.sh
-```
+</pre>
 
 Download models:
 
-```bash
+<pre>
 docker compose --env-file .generated/compose/dev.env -f docker-compose.dev.yml exec age-decision-core python scripts/models/download_models.py
-```
+</pre>
 
 Stop the environment:
 
-```bash
+<pre>
 docker compose --env-file .generated/compose/dev.env -f docker-compose.dev.yml down
-```
+</pre>
 
 <hr>
 
 <h2>Health checks</h2>
 
-```bash
+<pre>
 curl -i http://localhost:8000/health
 curl -i http://localhost:8000/version
 curl -i http://localhost:8000/engine/status
-```
+</pre>
 
 Expected health response:
 
@@ -41,8 +41,8 @@ Expected health response:
 {
   "status": "ok",
   "service": "age-decision-core",
-  "version": "2.4.0",
-  "contract_version": "2.4"
+  "version": "2.5.0",
+  "contract_version": "2.5"
 }
 ```
 <!-- END:HEALTH_RESPONSE -->
@@ -54,8 +54,8 @@ Expected version response:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.4.0",
-  "contract_version": "2.4",
+  "version": "2.5.0",
+  "contract_version": "2.5",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
 }
@@ -66,99 +66,54 @@ Expected version response:
 
 <h2>Run an age decision</h2>
 
-```bash
+<pre>
 curl -X POST "http://localhost:8000/estimate?majority_country=FR" \
   -H "X-Request-ID: test-request-001" \
   -H "X-Correlation-ID: test-correlation-001" \
   -F "file=@./test-face.jpg"
-```
-
-Standardized validation error example (missing multipart file):
-
-```bash
-curl -X POST "http://localhost:8000/estimate" \
-  -H "X-Request-ID: test-request-002" \
-  -H "X-Correlation-ID: test-correlation-002"
-```
-
-Expected response:
-
-```json
-{
-  "request_id": "test-request-002",
-  "correlation_id": "test-correlation-002",
-  "error": {
-    "code": "missing_file",
-    "message": "Invalid request."
-  }
-}
-```
+</pre>
 
 <hr>
 
 <h2>Runtime configuration</h2>
 
-Default runtime values are declared in `project.json`.
+Runtime configuration is defined in project.json.
 
-Generated runtime files are written to:
+Generated files:
 
-```text
+<pre>
 .generated/runtime/
-```
-
-Generated Compose files are written to:
-
-```text
 .generated/compose/
-```
+</pre>
 
-Do not edit generated files manually.
+Regenerate:
 
-Regenerate them with:
-
-```bash
+<pre>
 ./scripts/config/generate_env.sh dev
-```
+</pre>
+
+Runtime configuration uses model identifiers.
+
+Low-level model paths and threshold values must not be treated as public runtime contract.
 
 <hr>
 
 <h2>External Docker usage</h2>
 
-Run from the published image:
-
-```bash
+<pre>
 docker run --rm \
   -p 8000:8000 \
   -v "$PWD/models:/app/models" \
   ghcr.io/credona/age-decision-core:latest
-```
-
-Override runtime values:
-
-```bash
-docker run --rm \
-  -p 8000:8000 \
-  -e AGE_THRESHOLD=21 \
-  -e CONFIDENCE_THRESHOLD=0.9 \
-  -v "$PWD/models:/app/models" \
-  ghcr.io/credona/age-decision-core:latest
-```
+</pre>
 
 <hr>
 
 <h2>Validation</h2>
 
-Run the full auto-fix and validation pipeline:
-
-```bash
-./scripts/ci/fix_all_docker.sh
-```
-
-Run validation only:
-
-```bash
+<pre>
 ./scripts/ci/check_all_docker.sh
-```
+</pre>
 
 <hr>
 
@@ -168,8 +123,8 @@ Run validation only:
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.4.0",
-  "contract_version": "2.4",
+  "version": "2.5.0",
+  "contract_version": "2.5",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"

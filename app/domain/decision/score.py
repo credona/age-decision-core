@@ -5,6 +5,7 @@ from app.domain.decision.constants import (
     SCORE_LEVEL_MEDIUM,
     SCORE_LEVEL_NONE,
 )
+from app.domain.scoring.policy import AgeScoringPolicy, default_age_scoring_policy
 
 
 class CredScoreCalculator:
@@ -16,14 +17,21 @@ class CredScoreCalculator:
     public contract.
     """
 
+    def __init__(self, scoring_policy: AgeScoringPolicy | None = None):
+        self.scoring_policy = scoring_policy or default_age_scoring_policy()
+
     def compute(
         self,
         decision: str,
         signal_quality_score: float | None,
         internal_estimate: float | None,
-        threshold: int,
-        margin: int,
+        threshold: int | None = None,
+        margin: int | None = None,
     ) -> dict:
+        policy = self.scoring_policy
+        threshold_value = threshold if threshold is not None else policy.age_threshold
+        margin_value = margin if margin is not None else policy.age_margin
+
         if (
             decision == DECISION_UNCERTAIN
             or signal_quality_score is None
@@ -38,14 +46,19 @@ class CredScoreCalculator:
                 },
             }
 
-        distance = abs(internal_estimate - threshold)
+        distance = abs(internal_estimate - threshold_value)
 
-        if margin <= 0:
+        if margin_value <= 0:
             distance_factor = 1.0
         else:
-            distance_factor = min(distance / (margin * 3), 1.0)
+            denominator = margin_value * policy.separation_margin_multiplier
+            distance_factor = min(distance / denominator, 1.0)
 
-        score = round((signal_quality_score * 0.7) + (distance_factor * 0.3), 4)
+        score = round(
+            (signal_quality_score * policy.signal_quality_weight)
+            + (distance_factor * policy.threshold_separation_weight),
+            4,
+        )
 
         return {
             "score": score,

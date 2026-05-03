@@ -1,8 +1,8 @@
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.4.0",
-  "contract_version": "2.4",
+  "version": "2.5.0",
+  "contract_version": "2.5",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core",
   "license": "Apache-2.0",
@@ -21,33 +21,17 @@
     }
   },
   "runtime": {
-    "dev": {
+    "common": {
       "CORE_PORT": "8000",
-      "FACE_DETECTION_MODEL_PATH": "models/face_detection/face_detection_yunet_2023mar.onnx",
-      "AGE_MODEL_PATH": "models/age_estimation/age-gender-prediction-ONNX.onnx",
+      "AGE_MODEL_ID": "credona.age.age-gender-onnx.v1",
+      "FACE_DETECTION_MODEL_ID": "credona.face.yunet.v1",
       "USE_MOCK_MODEL": "false",
-      "DEFAULT_AGE_CONFIDENCE": "0.8",
-      "AGE_THRESHOLD": "18",
-      "AGE_MARGIN": "2",
-      "CONFIDENCE_THRESHOLD": "0.7",
       "PRIVACY_MODE": "true",
       "ENABLE_ZK_READY": "true",
       "LOG_LEVEL": "INFO",
       "LOG_FORMAT": "json"
     },
-    "prod": {
-      "CORE_PORT": "8000",
-      "FACE_DETECTION_MODEL_PATH": "models/face_detection/face_detection_yunet_2023mar.onnx",
-      "AGE_MODEL_PATH": "models/age_estimation/age-gender-prediction-ONNX.onnx",
-      "USE_MOCK_MODEL": "false",
-      "DEFAULT_AGE_CONFIDENCE": "0.8",
-      "AGE_THRESHOLD": "18",
-      "AGE_MARGIN": "2",
-      "CONFIDENCE_THRESHOLD": "0.7",
-      "PRIVACY_MODE": "true",
-      "ENABLE_ZK_READY": "true",
-      "LOG_LEVEL": "INFO",
-      "LOG_FORMAT": "json"
-    }
+    "dev": {},
+    "prod": {}
   }
 }

@@ -1,35 +1,34 @@
-import os
+from pathlib import Path
+
+from app.domain.models.metadata import ModelMetadata
 
 
 class ModelLoader:
     """
-    Loads ONNX models from disk.
+    Loads ONNX models from disk using validated model metadata.
     """
 
-    def __init__(self, model_path: str, use_mock: bool = False):
-        self.model_path = model_path
+    def __init__(self, model: ModelMetadata, use_mock: bool = False):
+        self.model = model
         self.use_mock = use_mock
         self.session = None
 
     def load(self):
-        """
-        Load an ONNX model unless mock mode is enabled.
-        """
         if self.use_mock:
             return None
 
-        if not os.path.exists(self.model_path):
-            raise RuntimeError(f"Model not found at path: {self.model_path}")
+        if not Path(self.model.path).exists():
+            raise RuntimeError("Configured model file was not found.")
 
         try:
             import onnxruntime as ort
 
             self.session = ort.InferenceSession(
-                self.model_path,
+                self.model.path,
                 providers=["CPUExecutionProvider"],
             )
 
             return self.session
 
         except Exception as exc:
-            raise RuntimeError(f"Failed to load ONNX model: {exc}") from exc
+            raise RuntimeError("Failed to load configured ONNX model.") from exc
