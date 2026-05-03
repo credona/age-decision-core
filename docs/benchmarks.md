@@ -2,7 +2,7 @@
 
 This document describes benchmark expectations for Age Decision Core.
 
-Benchmark results should be reproducible and separated from product claims.
+Benchmark results must be reproducible and tied to explicit model identifiers.
 
 <hr>
 
@@ -10,80 +10,90 @@ Benchmark results should be reproducible and separated from product claims.
 
 The repository includes:
 
-```text
-scripts/benchmark.py
-```
+<pre>
+scripts/benchmark/benchmark.py
+</pre>
 
-Download models before running benchmarks:
+Run from the development container:
 
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/download_models.py
-```
-
-Run locally from the development container:
-
-```bash
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/benchmark.py
-```
+<pre>
+docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/benchmark/benchmark.py
+</pre>
 
 <hr>
 
 <h2>What the benchmark measures</h2>
 
-The current benchmark focuses on service execution behavior.
+The current benchmark focuses on service execution behavior:
 
-Typical metrics include:
-
-- number of requests
+- request count
 - success count
 - average latency
 - percentile latency
 
 <hr>
 
-<h2>What the benchmark does not prove</h2>
+<h2>Model reproducibility requirements</h2>
 
-The current benchmark does not prove:
+Every benchmark MUST specify:
 
-- legal age verification accuracy
-- demographic fairness
-- production reliability
-- spoof resistance
-- certified compliance
-- real-world calibration quality
+<pre>
+model_id
+model_version
+scoring_policy_id
+runtime (onnx / mock)
+execution provider
+</pre>
+
+Low-level model paths must not be used as reference identifiers.
 
 <hr>
 
-<h2>Model context</h2>
+<h2>Dataset transparency</h2>
 
-Benchmark reports must identify the model files used during execution.
+Benchmark reports must include:
 
-This avoids mixing results from different model versions, sources, or runtime configurations.
+<pre>
+dataset name
+dataset size
+dataset source
+known biases
+preprocessing steps
+</pre>
+
+<hr>
+
+<h2>What the benchmark does not prove</h2>
+
+Benchmarks do not prove:
+
+- legal age verification accuracy
+- demographic fairness
+- spoof resistance
+- regulatory compliance
+- real-world calibration
 
 <hr>
 
 <h2>Evaluation direction</h2>
 
-Future benchmark work should include:
+Future work:
 
-- documented evaluation datasets
-- confidence calibration notes
-- age threshold evaluation
-- uncertainty analysis
-- reproducible benchmark reports
-- clear separation between local results and upstream model claims
+- calibration curves
+- threshold sensitivity analysis
+- uncertainty distribution
+- cross-dataset validation
+- reproducible benchmark snapshots
 
 <hr>
 
 <h2>Reporting format</h2>
 
-Benchmark reports should include:
-
-```text
+<pre>
 date
-runtime
-model paths
-model sources
+model_id
+model_version
+scoring_policy_id
 dataset name
 dataset size
 request count
@@ -92,4 +102,4 @@ average latency
 p95 latency
 error count
 known limitations
-```
+</pre>

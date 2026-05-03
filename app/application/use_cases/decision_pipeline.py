@@ -12,7 +12,7 @@ from app.domain.decision.score import CredScoreCalculator
 from app.domain.policies.country_rules import CountryRules
 from app.domain.privacy.metadata import PrivacyMetadataBuilder
 from app.domain.proof.metadata import ProofMetadataBuilder
-from app.infrastructure.config.settings import settings
+from app.domain.scoring.policy import default_age_scoring_policy
 from app.infrastructure.logging.safe_logger import get_logger, log_event
 from app.infrastructure.vision.face_cropper import FaceCropper
 from app.infrastructure.vision.face_preprocessor import FacePreprocessor
@@ -20,24 +20,16 @@ from app.infrastructure.vision.opencv_image_loader import load_image_from_bytes
 
 
 class DecisionPipeline:
-    """
-    Application service (orchestration).
-
-    Infrastructure dependencies are injected via ports.
-    """
-
     def __init__(
         self,
         inference_engine: InferenceEnginePort,
         input_analyzer: InputAnalyzerPort,
     ):
-        self.default_age_threshold = settings.age_threshold
-        self.default_age_margin = settings.age_margin
-        self.default_signal_quality_threshold = settings.signal_quality_threshold
+        self.scoring_policy = default_age_scoring_policy()
 
         self.country_rules = CountryRules()
-        self.decision_policy = DecisionPolicy()
-        self.cred_score_calculator = CredScoreCalculator()
+        self.decision_policy = DecisionPolicy(self.scoring_policy)
+        self.cred_score_calculator = CredScoreCalculator(self.scoring_policy)
         self.privacy_builder = PrivacyMetadataBuilder()
         self.proof_builder = ProofMetadataBuilder()
 
@@ -98,8 +90,6 @@ class DecisionPipeline:
             age=internal_estimate,
             signal_quality_score=signal_quality_score,
             threshold=threshold_value,
-            margin=self.default_age_margin,
-            signal_quality_threshold=self.default_signal_quality_threshold,
         )
 
         cred_decision_score = self.cred_score_calculator.compute(
@@ -107,7 +97,6 @@ class DecisionPipeline:
             signal_quality_score=signal_quality_score,
             internal_estimate=internal_estimate,
             threshold=threshold_value,
-            margin=self.default_age_margin,
         )
 
         response = {
@@ -121,10 +110,10 @@ class DecisionPipeline:
             "spoof_check": self._build_spoof_check(),
             "cred_decision_score": cred_decision_score,
             "privacy": self.privacy_builder.build(
-                zk_ready=settings.enable_zk_ready,
+                zk_ready=True,
             ),
             "proof": self.proof_builder.build(
-                enabled=settings.enable_zk_ready,
+                enabled=True,
                 threshold=threshold,
             ),
             "rejection_reason": rejection_reason,
@@ -151,7 +140,7 @@ class DecisionPipeline:
         if country_threshold is not None:
             return country_threshold, "majority_country"
 
-        return self.default_age_threshold, "default"
+        return self.scoring_policy.age_threshold, "default"
 
     def _build_threshold_policy(self, value, source, majority_country):
         return {
@@ -189,15 +178,9 @@ class DecisionPipeline:
                 signal_quality_score=None,
                 internal_estimate=None,
                 threshold=threshold["value"],
-                margin=self.default_age_margin,
             ),
-            "privacy": self.privacy_builder.build(
-                zk_ready=settings.enable_zk_ready,
-            ),
-            "proof": self.proof_builder.build(
-                enabled=settings.enable_zk_ready,
-                threshold=threshold,
-            ),
+            "privacy": self.privacy_builder.build(zk_ready=True),
+            "proof": self.proof_builder.build(enabled=True, threshold=threshold),
             "rejection_reason": reason,
             "engine_info": self._build_engine_info(),
         }
