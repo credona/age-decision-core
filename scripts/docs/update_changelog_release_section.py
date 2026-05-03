@@ -20,6 +20,9 @@ MANAGED_VERSION = "2.4.0"
 
 CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
     "Introduced clean architecture boundaries across internal layers.",
+    "Added privacy-safe logging tests covering image, base64, raw payload, scores, "
+    "thresholds, and downstream data leakage.",
+    "Added deterministic rejection for unsupported v3 input types: image_sequence and video.",
     "Replaced age-oriented internals with neutral decision pipeline terminology.",
     "Moved predictor and face detector adapters behind inference engine and input analyzer ports.",
     "Centralized decision, score, proof, privacy, and API constants to reduce magic strings.",

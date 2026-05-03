@@ -13,6 +13,7 @@ from app.api.constants import (
     LOG_EVENT_AGE_DECISION_FAILED,
     LOG_LEVEL_WARNING,
 )
+from app.api.input_validator import UnsupportedInputTypeError, validate_input_type
 from app.api.response_filter import filter_decision_response
 from app.application.dto.estimate_command import EstimateCommand
 from app.application.use_cases.decision_pipeline import DecisionPipeline
@@ -67,6 +68,7 @@ def model_status():
 async def estimate_age(
     file: UploadFile = File(...),
     age_threshold: int | None = Query(default=None),
+    input_type: str = Query(default="image"),
     majority_country: str | None = Query(default=None),
     x_request_id: str | None = Header(default=None),
     x_correlation_id: str | None = Header(default=None),
@@ -77,6 +79,8 @@ async def estimate_age(
     )
 
     try:
+        validate_input_type(input_type)
+
         image_bytes = await file.read()
 
         result = await run_decision_use_case.execute(
@@ -91,6 +95,22 @@ async def estimate_age(
         )
 
         return filter_decision_response(result)
+
+    except UnsupportedInputTypeError as exc:
+        _log_error(
+            request_id=request_id,
+            correlation_id=correlation_id,
+            error_type="validation_error",
+            error_code="UNSUPPORTED_INPUT_TYPE",
+        )
+
+        return _error_response(
+            status_code=400,
+            request_id=request_id,
+            correlation_id=correlation_id,
+            code="UNSUPPORTED_INPUT_TYPE",
+            message=str(exc),
+        )
 
     except ValueError as exc:
         error_code = _map_value_error_code(str(exc))

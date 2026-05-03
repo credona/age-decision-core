@@ -8,6 +8,8 @@ Global project direction is tracked in the central Age Decision repository.
 
 <ul>
   <li>Introduced clean architecture boundaries across internal layers.</li>
+  <li>Added privacy-safe logging tests covering image, base64, raw payload, scores, thresholds, and downstream data leakage.</li>
+  <li>Added deterministic rejection for unsupported v3 input types: image_sequence and video.</li>
   <li>Replaced age-oriented internals with neutral decision pipeline terminology.</li>
   <li>Moved predictor and face detector adapters behind inference engine and input analyzer ports.</li>
   <li>Centralized decision, score, proof, privacy, and API constants to reduce magic strings.</li>
