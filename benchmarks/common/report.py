@@ -134,7 +134,9 @@ def _assert_no_forbidden_keys(value: Any) -> None:
 
 
 def _generated_at() -> str:
-    return os.getenv("BENCHMARK_GENERATED_AT") or datetime.now(UTC).replace(microsecond=0).isoformat()
+    return (
+        os.getenv("BENCHMARK_GENERATED_AT") or datetime.now(UTC).replace(microsecond=0).isoformat()
+    )
 
 
 def _machine_metadata() -> dict[str, Any]:
@@ -144,7 +146,12 @@ def _machine_metadata() -> dict[str, Any]:
         "cpu": str(machine.get("cpu", "unknown")),
         "ram_gb": float(machine.get("ram_gb", 0.0)),
         "gpu": str(machine.get("gpu", os.getenv("BENCHMARK_GPU", "none"))),
-        "hosting_provider": str(machine.get("hosting_provider", os.getenv("BENCHMARK_HOSTING_PROVIDER", "unknown"))),
+        "hosting_provider": str(
+            machine.get(
+                "hosting_provider",
+                os.getenv("BENCHMARK_HOSTING_PROVIDER", "unknown"),
+            )
+        ),
         "os": str(machine.get("os", "unknown")),
         "docker_version": str(machine.get("docker_version", "unavailable")),
     }
