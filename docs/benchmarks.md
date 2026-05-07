@@ -11,13 +11,13 @@ Benchmark results must be reproducible and tied to explicit model identifiers.
 The repository includes:
 
 <pre>
-scripts/benchmark/benchmark.py
+../age-decision-benchmark/scripts/server/run_all_service_contract_benchmarks_local.sh
 </pre>
 
 Run from the development container:
 
 <pre>
-docker compose -f docker-compose.dev.yml exec age-decision-core python scripts/benchmark/benchmark.py
+cd ../age-decision-benchmark && scripts/server/run_all_service_contract_benchmarks_local.sh
 </pre>
 
 <hr>
