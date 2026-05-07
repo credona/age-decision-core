@@ -19,13 +19,11 @@ CHANGELOG_PATH = Path("CHANGELOG.md")
 MANAGED_VERSION = "2.6.0"
 
 CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
-    "Added privacy-safe benchmark report schema for API end-to-end benchmarks.",
-    "Added API end-to-end benchmark execution script for the public verification flow.",
-    "Added aggregate latency, decision distribution, and spoof-check presence metrics.",
-    "Added machine, runtime, dataset, and hosting provider metadata in benchmark reports.",
-    "Added benchmark privacy tests preventing raw payloads and downstream response exposure.",
-    "Added benchmark output schema tests for reproducible reporting.",
-    "Validated the release through Docker CI-equivalent checks.",
+    "Updated project and compatibility metadata to v2.6.0.",
+    "Aligned Core with the centralized age-decision-benchmark laboratory.",
+    "Removed legacy local benchmark orchestration from the service repository.",
+    "Kept Core focused on inference, public contract, privacy, and deterministic scoring.",
+    "Preserved Docker CI-equivalent validation after benchmark orchestration cleanup.",
 )
 
 
