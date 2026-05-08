@@ -41,8 +41,8 @@ Expected health response:
 {
   "status": "ok",
   "service": "age-decision-core",
-  "version": "2.5.0",
-  "contract_version": "2.5"
+  "version": "2.6.0",
+  "contract_version": "2.6"
 }
 ```
 <!-- END:HEALTH_RESPONSE -->
@@ -54,8 +54,8 @@ Expected version response:
 {
   "service_name": "age-decision-core",
   "app_name": "Age Decision Core",
-  "version": "2.5.0",
-  "contract_version": "2.5",
+  "version": "2.6.0",
+  "contract_version": "2.6",
   "repository": "https://github.com/credona/age-decision-core",
   "image": "ghcr.io/credona/age-decision-core"
 }
@@ -123,8 +123,8 @@ docker run --rm \
 ```json
 {
   "service": "age-decision-core",
-  "version": "2.5.0",
-  "contract_version": "2.5",
+  "version": "2.6.0",
+  "contract_version": "2.6",
   "compatible_with": {
     "age-decision-api": ">=2.0.0 <3.0.0",
     "age-decision-js": ">=2.0.0 <3.0.0"

@@ -4,6 +4,18 @@ This changelog tracks changes specific to Age Decision Core.
 
 Global project direction is tracked in the central Age Decision repository.
 
+<h2>2.6.0</h2>
+
+<ul>
+  <li>Updated project and compatibility metadata to v2.6.0.</li>
+  <li>Aligned Core with the centralized age-decision-benchmark laboratory.</li>
+  <li>Removed legacy local benchmark orchestration from the service repository.</li>
+  <li>Kept Core focused on inference, public contract, privacy, and deterministic scoring.</li>
+  <li>Preserved Docker CI-equivalent validation after benchmark orchestration cleanup.</li>
+</ul>
+
+<hr>
+
 <h2>2.5.0</h2>
 
 <ul>
