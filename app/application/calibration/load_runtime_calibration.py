@@ -8,10 +8,12 @@ from app.application.calibration.ports import (
 )
 from app.domain.calibration import (
     CalibrationActivationError,
+    CalibrationDistributionManifest,
     CalibrationIntegrityError,
     CalibrationPolicyMetadata,
     CalibrationSignatureError,
     RuntimeCalibrationPolicy,
+    TrustedCalibrationRegistry,
 )
 
 
@@ -21,10 +23,14 @@ class LoadRuntimeCalibrationUseCase:
         reader: CalibrationPolicyReaderPort,
         integrity_verifier: CalibrationIntegrityVerifierPort,
         signature_verifier: CalibrationSignatureVerifierPort,
+        manifest: CalibrationDistributionManifest | None = None,
+        trusted_registry: TrustedCalibrationRegistry | None = None,
     ):
         self.reader = reader
         self.integrity_verifier = integrity_verifier
         self.signature_verifier = signature_verifier
+        self.manifest = manifest
+        self.trusted_registry = trusted_registry
 
     def execute(
         self,
@@ -42,15 +48,16 @@ class LoadRuntimeCalibrationUseCase:
 
         metadata = self._build_metadata(document)
         private_payload = self._extract_private_payload(document)
+        canonical_payload = self._canonical_private_payload(private_payload)
 
         if not self.integrity_verifier.verify(
-            payload=self._canonical_private_payload(private_payload),
+            payload=canonical_payload,
             expected_hash=metadata.payload_hash,
         ):
             raise CalibrationIntegrityError("CALIBRATION_HASH_INVALID")
 
         if not self.signature_verifier.verify(
-            payload=self._canonical_private_payload(private_payload),
+            payload=canonical_payload,
             signature=metadata.signature,
         ):
             raise CalibrationSignatureError("CALIBRATION_SIGNATURE_INVALID")
@@ -65,6 +72,12 @@ class LoadRuntimeCalibrationUseCase:
             expected_contract_version=expected_contract_version,
             expected_model_identifier=expected_model_identifier,
         )
+
+        if self.manifest is not None:
+            self.manifest.assert_allows(policy)
+
+        if self.trusted_registry is not None:
+            self.trusted_registry.assert_trusted(policy)
 
         return policy
 

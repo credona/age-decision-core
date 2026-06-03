@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     core_calibration_policy_path: str | None = None
     core_calibration_public_key_b64: str | None = None
     core_calibration_required: bool = False
+    core_calibration_state_dir: str = ".generated/calibration/core"
+    core_calibration_manifest_path: str | None = None
+    core_calibration_registry_path: str | None = None
 
     privacy_mode: bool = True
     enable_zk_ready: bool = True

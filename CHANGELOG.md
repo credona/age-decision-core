@@ -19,6 +19,19 @@ Global project direction is tracked in the central Age Decision repository.
   <li>Added fail-fast startup activation when runtime calibration is required but invalid.</li>
   <li>Added deterministic Core calibration application before decision computation.</li>
   <li>Added privacy tests ensuring private calibration internals are stripped from public responses.</li>
+  <li>Added runtime calibration activation lifecycle records.</li>
+  <li>Added persistent active calibration state for Core.</li>
+  <li>Added persistent previous calibration state for rollback support.</li>
+  <li>Added runtime calibration rollback use case and rollback records.</li>
+  <li>Added append-only calibration provenance chain.</li>
+  <li>Added public calibration summary without private payload exposure.</li>
+  <li>Added trusted calibration registry validation.</li>
+  <li>Added calibration distribution manifest validation.</li>
+  <li>Added file-based calibration lifecycle store for Docker runtime.</li>
+  <li>Added file-based calibration manifest and trusted registry readers.</li>
+  <li>Added runtime activation integration with manifest and trusted registry validation.</li>
+  <li>Added tests proving runtime calibration changes public decision output without leaking internals.</li>
+  <li>Added privacy tests preventing calibration metadata and private parameters from logs.</li>
 </ul>
 
 <hr>

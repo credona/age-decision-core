@@ -142,3 +142,92 @@ def test_load_runtime_calibration_rejects_wrong_service() -> None:
             expected_contract_version="2.6.0",
             expected_model_identifier="credona.age.age-gender-onnx.v1",
         )
+
+
+def test_load_runtime_calibration_accepts_policy_allowed_by_manifest_and_registry() -> None:
+    from app.domain.calibration import (
+        CalibrationDistributionManifest,
+        TrustedCalibrationPolicyRef,
+        TrustedCalibrationRegistry,
+    )
+
+    document, public_key_b64 = signed_policy_document()
+    parsed = json.loads(document.decode("utf-8"))
+    metadata = parsed["metadata"]
+
+    use_case = LoadRuntimeCalibrationUseCase(
+        reader=MemoryPolicyReader(document),
+        integrity_verifier=Sha256CalibrationIntegrityVerifier(),
+        signature_verifier=Ed25519CalibrationSignatureVerifier(public_key_b64),
+        manifest=CalibrationDistributionManifest(
+            manifest_id="core-manifest-v1",
+            service="core",
+            contract_version="2.6.0",
+            policy_ids=("core-runtime-policy-test",),
+        ),
+        trusted_registry=TrustedCalibrationRegistry(
+            [
+                TrustedCalibrationPolicyRef(
+                    policy_id=metadata["policy_id"],
+                    service=metadata["service"],
+                    contract_version=metadata["contract_version"],
+                    model_identifier=metadata["model_identifier"],
+                    payload_hash=metadata["payload_hash"],
+                    public_key_id="core-key-1",
+                )
+            ]
+        ),
+    )
+
+    policy = use_case.execute(
+        expected_service="core",
+        expected_contract_version="2.6.0",
+        expected_model_identifier="credona.age.age-gender-onnx.v1",
+    )
+
+    assert policy.metadata.policy_id == "core-runtime-policy-test"
+
+
+def test_load_runtime_calibration_rejects_policy_not_allowed_by_manifest() -> None:
+    from app.domain.calibration import CalibrationDistributionManifest
+
+    document, public_key_b64 = signed_policy_document()
+
+    use_case = LoadRuntimeCalibrationUseCase(
+        reader=MemoryPolicyReader(document),
+        integrity_verifier=Sha256CalibrationIntegrityVerifier(),
+        signature_verifier=Ed25519CalibrationSignatureVerifier(public_key_b64),
+        manifest=CalibrationDistributionManifest(
+            manifest_id="core-manifest-v1",
+            service="core",
+            contract_version="2.6.0",
+            policy_ids=("another-policy",),
+        ),
+    )
+
+    with pytest.raises(CalibrationActivationError, match="CALIBRATION_POLICY_NOT_IN_MANIFEST"):
+        use_case.execute(
+            expected_service="core",
+            expected_contract_version="2.6.0",
+            expected_model_identifier="credona.age.age-gender-onnx.v1",
+        )
+
+
+def test_load_runtime_calibration_rejects_policy_not_in_trusted_registry() -> None:
+    from app.domain.calibration import TrustedCalibrationRegistry
+
+    document, public_key_b64 = signed_policy_document()
+
+    use_case = LoadRuntimeCalibrationUseCase(
+        reader=MemoryPolicyReader(document),
+        integrity_verifier=Sha256CalibrationIntegrityVerifier(),
+        signature_verifier=Ed25519CalibrationSignatureVerifier(public_key_b64),
+        trusted_registry=TrustedCalibrationRegistry([]),
+    )
+
+    with pytest.raises(CalibrationActivationError, match="CALIBRATION_POLICY_NOT_TRUSTED"):
+        use_case.execute(
+            expected_service="core",
+            expected_contract_version="2.6.0",
+            expected_model_identifier="credona.age.age-gender-onnx.v1",
+        )

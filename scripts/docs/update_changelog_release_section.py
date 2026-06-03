@@ -34,6 +34,22 @@ CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
         "Added privacy tests ensuring private calibration internals are stripped "
         "from public responses."
     ),
+    "Added runtime calibration activation lifecycle records.",
+    "Added persistent active calibration state for Core.",
+    "Added persistent previous calibration state for rollback support.",
+    "Added runtime calibration rollback use case and rollback records.",
+    "Added append-only calibration provenance chain.",
+    "Added public calibration summary without private payload exposure.",
+    "Added trusted calibration registry validation.",
+    "Added calibration distribution manifest validation.",
+    "Added file-based calibration lifecycle store for Docker runtime.",
+    "Added file-based calibration manifest and trusted registry readers.",
+    "Added runtime activation integration with manifest and trusted registry validation.",
+    (
+        "Added tests proving runtime calibration changes public decision output "
+        "without leaking internals."
+    ),
+    "Added privacy tests preventing calibration metadata and private parameters from logs.",
 )
 
 
