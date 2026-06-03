@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     use_mock_model: bool = False
     default_signal_quality: float = 0.8
 
+    core_calibration_policy_path: str | None = None
+    core_calibration_public_key_b64: str | None = None
+    core_calibration_required: bool = False
+
     privacy_mode: bool = True
     enable_zk_ready: bool = True
 

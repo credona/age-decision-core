@@ -24,6 +24,16 @@ CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
     "Removed legacy local benchmark orchestration from the service repository.",
     "Kept Core focused on inference, public contract, privacy, and deterministic scoring.",
     "Preserved Docker CI-equivalent validation after benchmark orchestration cleanup.",
+    "Added runtime private calibration policy loading for Core.",
+    "Added SHA-256 integrity verification for runtime calibration policies.",
+    "Added Ed25519 signature verification for runtime calibration policies.",
+    "Added contract, service, and model compatibility checks for runtime calibration activation.",
+    "Added fail-fast startup activation when runtime calibration is required but invalid.",
+    "Added deterministic Core calibration application before decision computation.",
+    (
+        "Added privacy tests ensuring private calibration internals are stripped "
+        "from public responses."
+    ),
 )
 
 

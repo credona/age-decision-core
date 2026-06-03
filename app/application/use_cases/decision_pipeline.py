@@ -4,6 +4,7 @@ from app.application.ports.image_decoder import ImageDecoderPort
 from app.application.ports.inference_engine import InferenceEnginePort
 from app.application.ports.input_analyzer import InputAnalyzerPort
 from app.application.ports.input_preprocessor import InputPreprocessorPort
+from app.domain.calibration import CoreCalibrationApplier, RuntimeCalibrationPolicy
 from app.domain.decision.constants import (
     DECISION_UNCERTAIN,
     ENGINE_UNKNOWN,
@@ -28,11 +29,13 @@ class DecisionPipeline:
         face_cropper: FaceCropperPort,
         input_preprocessor: InputPreprocessorPort,
         event_logger: EventLoggerPort | None = None,
+        runtime_calibration: RuntimeCalibrationPolicy | None = None,
     ):
         self.scoring_policy = default_age_scoring_policy()
         self.country_rules = CountryRules()
         self.decision_policy = DecisionPolicy(self.scoring_policy)
         self.cred_score_calculator = CredScoreCalculator(self.scoring_policy)
+        self.calibration_applier = CoreCalibrationApplier(runtime_calibration)
         self.privacy_builder = PrivacyMetadataBuilder()
         self.proof_builder = ProofMetadataBuilder()
 
@@ -86,16 +89,21 @@ class DecisionPipeline:
         prepared_input = self.input_preprocessor.preprocess(face)
         internal_estimate, signal_quality_score = self.inference_engine.predict(prepared_input)
 
-        decision, rejection_reason = self.decision_policy.compute(
-            age=internal_estimate,
+        calibrated_signal = self.calibration_applier.apply(
+            internal_estimate=internal_estimate,
             signal_quality_score=signal_quality_score,
+        )
+
+        decision, rejection_reason = self.decision_policy.compute(
+            age=calibrated_signal.internal_estimate,
+            signal_quality_score=calibrated_signal.signal_quality_score,
             threshold=threshold_value,
         )
 
         cred_decision_score = self.cred_score_calculator.compute(
             decision=decision,
-            signal_quality_score=signal_quality_score,
-            internal_estimate=internal_estimate,
+            signal_quality_score=calibrated_signal.signal_quality_score,
+            internal_estimate=calibrated_signal.internal_estimate,
             threshold=threshold_value,
         )
 

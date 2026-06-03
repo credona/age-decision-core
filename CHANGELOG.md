@@ -12,6 +12,13 @@ Global project direction is tracked in the central Age Decision repository.
   <li>Removed legacy local benchmark orchestration from the service repository.</li>
   <li>Kept Core focused on inference, public contract, privacy, and deterministic scoring.</li>
   <li>Preserved Docker CI-equivalent validation after benchmark orchestration cleanup.</li>
+  <li>Added runtime private calibration policy loading for Core.</li>
+  <li>Added SHA-256 integrity verification for runtime calibration policies.</li>
+  <li>Added Ed25519 signature verification for runtime calibration policies.</li>
+  <li>Added contract, service, and model compatibility checks for runtime calibration activation.</li>
+  <li>Added fail-fast startup activation when runtime calibration is required but invalid.</li>
+  <li>Added deterministic Core calibration application before decision computation.</li>
+  <li>Added privacy tests ensuring private calibration internals are stripped from public responses.</li>
 </ul>
 
 <hr>
