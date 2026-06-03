@@ -19,6 +19,7 @@ from app.application.dto.estimate_command import EstimateCommand
 from app.application.use_cases.decision_pipeline import DecisionPipeline
 from app.application.use_cases.get_model_status import GetEngineStatusUseCase
 from app.application.use_cases.run_decision import RunDecisionUseCase
+from app.domain.calibration import RuntimeCalibrationPolicy
 from app.infrastructure.logging.safe_event_logger import SafeEventLogger
 from app.infrastructure.logging.safe_logger import get_logger, log_event
 from app.infrastructure.models.onnx_inference_engine import OnnxInferenceEngine
@@ -37,19 +38,38 @@ class OpenCvImageDecoder:
 
 
 router = APIRouter()
+logger = get_logger("age_decision_api")
 
-decision_pipeline = DecisionPipeline(
-    inference_engine=OnnxInferenceEngine(),
-    input_analyzer=OpenCvInputAnalyzer(),
-    image_decoder=OpenCvImageDecoder(),
-    face_cropper=FaceCropper(),
-    input_preprocessor=FacePreprocessor(),
-    event_logger=SafeEventLogger(),
-)
 
+def build_decision_pipeline(
+    runtime_calibration: RuntimeCalibrationPolicy | None = None,
+) -> DecisionPipeline:
+    return DecisionPipeline(
+        inference_engine=OnnxInferenceEngine(),
+        input_analyzer=OpenCvInputAnalyzer(),
+        image_decoder=OpenCvImageDecoder(),
+        face_cropper=FaceCropper(),
+        input_preprocessor=FacePreprocessor(),
+        event_logger=SafeEventLogger(),
+        runtime_calibration=runtime_calibration,
+    )
+
+
+decision_pipeline = build_decision_pipeline()
 run_decision_use_case = RunDecisionUseCase(decision_pipeline)
 get_engine_status_use_case = GetEngineStatusUseCase(decision_pipeline)
-logger = get_logger("age_decision_api")
+
+
+def activate_runtime_calibration(
+    runtime_calibration: RuntimeCalibrationPolicy | None,
+) -> None:
+    global decision_pipeline
+    global get_engine_status_use_case
+    global run_decision_use_case
+
+    decision_pipeline = build_decision_pipeline(runtime_calibration)
+    run_decision_use_case = RunDecisionUseCase(decision_pipeline)
+    get_engine_status_use_case = GetEngineStatusUseCase(decision_pipeline)
 
 
 @router.get("/health")

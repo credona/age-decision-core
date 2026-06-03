@@ -4,6 +4,38 @@ This changelog tracks changes specific to Age Decision Core.
 
 Global project direction is tracked in the central Age Decision repository.
 
+<h2>2.6.0</h2>
+
+<ul>
+  <li>Updated project and compatibility metadata to v2.6.0.</li>
+  <li>Aligned Core with the centralized age-decision-benchmark laboratory.</li>
+  <li>Removed legacy local benchmark orchestration from the service repository.</li>
+  <li>Kept Core focused on inference, public contract, privacy, and deterministic scoring.</li>
+  <li>Preserved Docker CI-equivalent validation after benchmark orchestration cleanup.</li>
+  <li>Added runtime private calibration policy loading for Core.</li>
+  <li>Added SHA-256 integrity verification for runtime calibration policies.</li>
+  <li>Added Ed25519 signature verification for runtime calibration policies.</li>
+  <li>Added contract, service, and model compatibility checks for runtime calibration activation.</li>
+  <li>Added fail-fast startup activation when runtime calibration is required but invalid.</li>
+  <li>Added deterministic Core calibration application before decision computation.</li>
+  <li>Added privacy tests ensuring private calibration internals are stripped from public responses.</li>
+  <li>Added runtime calibration activation lifecycle records.</li>
+  <li>Added persistent active calibration state for Core.</li>
+  <li>Added persistent previous calibration state for rollback support.</li>
+  <li>Added runtime calibration rollback use case and rollback records.</li>
+  <li>Added append-only calibration provenance chain.</li>
+  <li>Added public calibration summary without private payload exposure.</li>
+  <li>Added trusted calibration registry validation.</li>
+  <li>Added calibration distribution manifest validation.</li>
+  <li>Added file-based calibration lifecycle store for Docker runtime.</li>
+  <li>Added file-based calibration manifest and trusted registry readers.</li>
+  <li>Added runtime activation integration with manifest and trusted registry validation.</li>
+  <li>Added tests proving runtime calibration changes public decision output without leaking internals.</li>
+  <li>Added privacy tests preventing calibration metadata and private parameters from logs.</li>
+</ul>
+
+<hr>
+
 <h2>2.5.0</h2>
 
 <ul>

@@ -116,6 +116,12 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements.dev.txt
 
+      - name: Cache model files
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: core-models-v1
+
       - name: Download model files
         run: python scripts/models/download_models.py
 
@@ -157,15 +163,25 @@ jobs:
             --build-arg LICENSE="${{ steps.project.outputs.license }}" \
             -t age-decision-core:ci .
 
+      - name: Cache model files
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: core-models-v1
+
+      - name: Download model files
+        run: python scripts/models/download_models.py
+
       - name: Create model volume
         run: docker volume create core-models-ci
 
-      - name: Download models into volume
+      - name: Copy cached models into volume
         run: |
           docker run --rm \
+            -v "$PWD/models:/source/models:ro" \
             -v core-models-ci:/app/models \
-            age-decision-core:ci \
-            python scripts/models/download_models.py
+            alpine:3.22 \
+            sh -c "cp -R /source/models/. /app/models/"
 
       - name: Run Docker container
         run: |
