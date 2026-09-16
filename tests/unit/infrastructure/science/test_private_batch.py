@@ -1,4 +1,5 @@
-from unittest.mock import Mock
+import asyncio
+from unittest.mock import AsyncMock
 
 from app.infrastructure.science.private_batch import (
     FAILURE_EXECUTION_ERROR,
@@ -22,16 +23,18 @@ def request() -> PrivateBatchRequest:
 
 
 def test_private_batch_returns_only_private_signals_on_success() -> None:
-    session = Mock()
+    session = AsyncMock()
     session.observe.return_value = PrivateAgeInferenceObservation(
         internal_estimate=19.25,
         signal_quality_score=0.81,
     )
 
-    result = execute_private_batch_request(
-        request=request(),
-        session=session,
-        read_bytes=lambda path: b"image-bytes",
+    result = asyncio.run(
+        execute_private_batch_request(
+            request=request(),
+            session=session,
+            read_bytes=lambda path: b"image-bytes",
+        )
     )
 
     assert result == {
@@ -43,7 +46,7 @@ def test_private_batch_returns_only_private_signals_on_success() -> None:
         },
     }
 
-    session.observe.assert_called_once_with(
+    session.observe.assert_awaited_once_with(
         image_bytes=b"image-bytes",
         content_type="image/jpeg",
     )
@@ -55,13 +58,15 @@ def test_private_batch_returns_only_private_signals_on_success() -> None:
 
 
 def test_private_batch_reports_inference_not_reached() -> None:
-    session = Mock()
+    session = AsyncMock()
     session.observe.return_value = None
 
-    result = execute_private_batch_request(
-        request=request(),
-        session=session,
-        read_bytes=lambda path: b"image-bytes",
+    result = asyncio.run(
+        execute_private_batch_request(
+            request=request(),
+            session=session,
+            read_bytes=lambda path: b"image-bytes",
+        )
     )
 
     assert result == {
@@ -72,16 +77,17 @@ def test_private_batch_reports_inference_not_reached() -> None:
 
 
 def test_private_batch_sanitizes_execution_errors() -> None:
-    session = Mock()
+    session = AsyncMock()
 
     private_error = "failed /private/corpus/sample.jpg with sensitive runtime details"
-
     session.observe.side_effect = RuntimeError(private_error)
 
-    result = execute_private_batch_request(
-        request=request(),
-        session=session,
-        read_bytes=lambda path: b"image-bytes",
+    result = asyncio.run(
+        execute_private_batch_request(
+            request=request(),
+            session=session,
+            read_bytes=lambda path: b"image-bytes",
+        )
     )
 
     assert result == {
@@ -97,15 +103,17 @@ def test_private_batch_sanitizes_execution_errors() -> None:
 
 
 def test_private_batch_sanitizes_file_read_errors() -> None:
-    session = Mock()
+    session = AsyncMock()
 
     def fail_read(path):
         raise OSError(f"cannot read private path {path}")
 
-    result = execute_private_batch_request(
-        request=request(),
-        session=session,
-        read_bytes=fail_read,
+    result = asyncio.run(
+        execute_private_batch_request(
+            request=request(),
+            session=session,
+            read_bytes=fail_read,
+        )
     )
 
     assert result == {
@@ -114,11 +122,11 @@ def test_private_batch_sanitizes_file_read_errors() -> None:
         "failure_reason": FAILURE_EXECUTION_ERROR,
     }
 
-    session.observe.assert_not_called()
+    session.observe.assert_not_awaited()
 
 
 def test_private_batch_rejects_invalid_protocol_fields() -> None:
-    session = Mock()
+    session = AsyncMock()
 
     for invalid in (
         PrivateBatchRequest(
@@ -138,10 +146,12 @@ def test_private_batch_rejects_invalid_protocol_fields() -> None:
         ),
     ):
         try:
-            execute_private_batch_request(
-                request=invalid,
-                session=session,
-                read_bytes=lambda path: b"image",
+            asyncio.run(
+                execute_private_batch_request(
+                    request=invalid,
+                    session=session,
+                    read_bytes=lambda path: b"image",
+                )
             )
         except ValueError:
             pass

@@ -22,7 +22,7 @@ class PrivateBatchRequest:
     content_type: str
 
 
-def execute_private_batch_request(
+async def execute_private_batch_request(
     *,
     request: PrivateBatchRequest,
     session: PrivateAgeInferenceSession,
@@ -53,7 +53,7 @@ def execute_private_batch_request(
     try:
         image_bytes = loader(Path(request.image_path))
 
-        observation = session.observe(
+        observation = await session.observe(
             image_bytes=image_bytes,
             content_type=request.content_type,
         )

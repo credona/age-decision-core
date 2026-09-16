@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import asyncio
 import json
 import sys
+from typing import Any
 
 from app.infrastructure.science.private_batch import (
     PrivateBatchRequest,
@@ -26,7 +28,26 @@ def emit(payload: dict) -> None:
     sys.stdout.flush()
 
 
-def main() -> int:
+def require_string(
+    payload: dict[str, Any],
+    field: str,
+    *,
+    default: str | None = None,
+) -> str:
+    if field not in payload:
+        if default is None:
+            raise ValueError(f"missing protocol field: {field}")
+        return default
+
+    value = payload[field]
+
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"protocol field must be a non-empty string: {field}")
+
+    return value
+
+
+async def main_async() -> int:
     session = PrivateAgeInferenceSession()
 
     for raw_line in sys.stdin:
@@ -36,18 +57,26 @@ def main() -> int:
         try:
             payload = json.loads(raw_line)
 
+            if not isinstance(payload, dict):
+                raise ValueError("protocol payload must be an object")
+
             request = PrivateBatchRequest(
-                sample_id=str(payload["sample_id"]),
-                image_path=str(payload["image_path"]),
-                content_type=str(
-                    payload.get(
-                        "content_type",
-                        "image/jpeg",
-                    )
+                sample_id=require_string(
+                    payload,
+                    "sample_id",
+                ),
+                image_path=require_string(
+                    payload,
+                    "image_path",
+                ),
+                content_type=require_string(
+                    payload,
+                    "content_type",
+                    default="image/jpeg",
                 ),
             )
 
-            result = execute_private_batch_request(
+            result = await execute_private_batch_request(
                 request=request,
                 session=session,
             )
@@ -64,6 +93,10 @@ def main() -> int:
         emit(result)
 
     return 0
+
+
+def main() -> int:
+    return asyncio.run(main_async())
 
 
 if __name__ == "__main__":

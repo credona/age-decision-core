@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from app.application.dto.estimate_command import EstimateCommand
 from app.application.use_cases.decision_pipeline import DecisionPipeline
+from app.application.use_cases.run_decision import RunDecisionUseCase
 from app.infrastructure.bootstrap.decision_pipeline import build_decision_pipeline
 
 
@@ -57,8 +58,9 @@ class PrivateAgeInferenceSession:
             runtime_calibration=None,
             scientific_observer=self._observer,
         )
+        self._run_decision = RunDecisionUseCase(self._pipeline)
 
-    def observe(
+    async def observe(
         self,
         *,
         image_bytes: bytes,
@@ -75,12 +77,12 @@ class PrivateAgeInferenceSession:
             majority_country=None,
         )
 
-        self._pipeline.run(command)
+        await self._run_decision.execute(command)
 
         return self._observer.observation()
 
 
-def observe_private_age_inference(
+async def observe_private_age_inference(
     *,
     image_bytes: bytes,
     content_type: str = "image/jpeg",
@@ -93,7 +95,7 @@ def observe_private_age_inference(
     """
     session = PrivateAgeInferenceSession()
 
-    return session.observe(
+    return await session.observe(
         image_bytes=image_bytes,
         content_type=content_type,
     )
