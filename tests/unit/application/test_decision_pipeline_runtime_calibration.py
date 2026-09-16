@@ -94,3 +94,57 @@ async def test_runtime_calibration_changes_public_decision() -> None:
     assert "decision_offset" not in serialized
     assert "calibration_parameters" not in serialized
     assert "private_payload" not in serialized
+
+
+class RecordingScientificObserver:
+    def __init__(self) -> None:
+        self.observations: list[dict[str, float]] = []
+
+    def observe_age_inference(
+        self,
+        *,
+        internal_estimate: float,
+        signal_quality_score: float,
+    ) -> None:
+        self.observations.append(
+            {
+                "internal_estimate": internal_estimate,
+                "signal_quality_score": signal_quality_score,
+            }
+        )
+
+
+@pytest.mark.anyio
+async def test_scientific_observer_receives_pre_calibration_signals() -> None:
+    observer = RecordingScientificObserver()
+
+    pipeline = DecisionPipeline(
+        inference_engine=FakeInferenceEngine(),
+        input_analyzer=FakeInputAnalyzer(),
+        image_decoder=FakeImageDecoder(),
+        face_cropper=FakeFaceCropper(),
+        input_preprocessor=FakeInputPreprocessor(),
+        runtime_calibration=make_policy(decision_offset=3.0),
+        scientific_observer=observer,
+    )
+
+    response = await run_pipeline(pipeline)
+
+    assert observer.observations == [
+        {
+            "internal_estimate": 19.0,
+            "signal_quality_score": 0.9,
+        }
+    ]
+
+    # 19.0 + 3.0 = 22.0 internally, so the calibrated decision is a match.
+    assert response["decision"] == "match"
+
+    # Private scientific signals must never enter the public pipeline response.
+    assert "internal_estimate" not in response
+    assert "signal_quality_score" not in response
+
+    serialized = str(response)
+    assert "decision_offset" not in serialized
+    assert "calibration_parameters" not in serialized
+    assert "private_payload" not in serialized

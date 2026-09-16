@@ -4,6 +4,10 @@ from app.application.ports.image_decoder import ImageDecoderPort
 from app.application.ports.inference_engine import InferenceEnginePort
 from app.application.ports.input_analyzer import InputAnalyzerPort
 from app.application.ports.input_preprocessor import InputPreprocessorPort
+from app.application.ports.scientific_observer import (
+    NullScientificObserver,
+    ScientificObserverPort,
+)
 from app.domain.calibration import CoreCalibrationApplier, RuntimeCalibrationPolicy
 from app.domain.decision.constants import (
     DECISION_UNCERTAIN,
@@ -30,6 +34,7 @@ class DecisionPipeline:
         input_preprocessor: InputPreprocessorPort,
         event_logger: EventLoggerPort | None = None,
         runtime_calibration: RuntimeCalibrationPolicy | None = None,
+        scientific_observer: ScientificObserverPort | None = None,
     ):
         self.scoring_policy = default_age_scoring_policy()
         self.country_rules = CountryRules()
@@ -45,6 +50,7 @@ class DecisionPipeline:
         self.input_preprocessor = input_preprocessor
         self.inference_engine = inference_engine
         self.event_logger = event_logger or NullEventLogger()
+        self.scientific_observer = scientific_observer or NullScientificObserver()
 
     def get_engine_status(self) -> dict:
         return {
@@ -88,6 +94,11 @@ class DecisionPipeline:
         face = self.face_cropper.crop(image, faces)
         prepared_input = self.input_preprocessor.preprocess(face)
         internal_estimate, signal_quality_score = self.inference_engine.predict(prepared_input)
+
+        self.scientific_observer.observe_age_inference(
+            internal_estimate=internal_estimate,
+            signal_quality_score=signal_quality_score,
+        )
 
         calibrated_signal = self.calibration_applier.apply(
             internal_estimate=internal_estimate,
