@@ -16,43 +16,17 @@ from app.api.constants import (
 from app.api.input_validator import UnsupportedInputTypeError, validate_input_type
 from app.api.response_filter import filter_decision_response
 from app.application.dto.estimate_command import EstimateCommand
-from app.application.use_cases.decision_pipeline import DecisionPipeline
 from app.application.use_cases.get_model_status import GetEngineStatusUseCase
 from app.application.use_cases.run_decision import RunDecisionUseCase
 from app.domain.calibration import RuntimeCalibrationPolicy
-from app.infrastructure.logging.safe_event_logger import SafeEventLogger
+from app.infrastructure.bootstrap.decision_pipeline import build_decision_pipeline
 from app.infrastructure.logging.safe_logger import get_logger, log_event
-from app.infrastructure.models.onnx_inference_engine import OnnxInferenceEngine
-from app.infrastructure.vision.face_cropper import FaceCropper
-from app.infrastructure.vision.face_preprocessor import FacePreprocessor
-from app.infrastructure.vision.opencv_image_loader import load_image_from_bytes
-from app.infrastructure.vision.opencv_input_analyzer import OpenCvInputAnalyzer
 from app.project import project_metadata
 from app.schemas.decision import DecisionResponse
 from app.schemas.error import ErrorResponse
 
-
-class OpenCvImageDecoder:
-    def decode(self, image_bytes: bytes):
-        return load_image_from_bytes(image_bytes)
-
-
 router = APIRouter()
 logger = get_logger("age_decision_api")
-
-
-def build_decision_pipeline(
-    runtime_calibration: RuntimeCalibrationPolicy | None = None,
-) -> DecisionPipeline:
-    return DecisionPipeline(
-        inference_engine=OnnxInferenceEngine(),
-        input_analyzer=OpenCvInputAnalyzer(),
-        image_decoder=OpenCvImageDecoder(),
-        face_cropper=FaceCropper(),
-        input_preprocessor=FacePreprocessor(),
-        event_logger=SafeEventLogger(),
-        runtime_calibration=runtime_calibration,
-    )
 
 
 decision_pipeline = build_decision_pipeline()
