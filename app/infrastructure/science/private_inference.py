@@ -5,6 +5,10 @@ from dataclasses import dataclass
 from app.application.dto.estimate_command import EstimateCommand
 from app.application.use_cases.decision_pipeline import DecisionPipeline
 from app.application.use_cases.run_decision import RunDecisionUseCase
+from app.domain.decision.constants import (
+    REJECTION_MULTIPLE_FACES,
+    REJECTION_NO_FACE,
+)
 from app.infrastructure.bootstrap.decision_pipeline import build_decision_pipeline
 
 
@@ -12,6 +16,11 @@ from app.infrastructure.bootstrap.decision_pipeline import build_decision_pipeli
 class PrivateAgeInferenceObservation:
     internal_estimate: float
     signal_quality_score: float
+
+
+@dataclass(frozen=True)
+class PrivateAgeInferenceNotReached:
+    reason: str
 
 
 class RecordingScientificObserver:
@@ -65,7 +74,7 @@ class PrivateAgeInferenceSession:
         *,
         image_bytes: bytes,
         content_type: str = "image/jpeg",
-    ) -> PrivateAgeInferenceObservation | None:
+    ) -> PrivateAgeInferenceObservation | PrivateAgeInferenceNotReached:
         self._observer.reset()
 
         command = EstimateCommand(
@@ -77,16 +86,32 @@ class PrivateAgeInferenceSession:
             majority_country=None,
         )
 
-        await self._run_decision.execute(command)
+        response = await self._run_decision.execute(command)
+        observation = self._observer.observation()
 
-        return self._observer.observation()
+        if observation is not None:
+            return observation
+
+        rejection_reason = response.get("rejection_reason")
+
+        if rejection_reason not in {
+            REJECTION_NO_FACE,
+            REJECTION_MULTIPLE_FACES,
+        }:
+            raise RuntimeError(
+                "Core inference was not reached without a controlled pre-inference rejection reason"
+            )
+
+        return PrivateAgeInferenceNotReached(
+            reason=rejection_reason,
+        )
 
 
 async def observe_private_age_inference(
     *,
     image_bytes: bytes,
     content_type: str = "image/jpeg",
-) -> PrivateAgeInferenceObservation | None:
+) -> PrivateAgeInferenceObservation | PrivateAgeInferenceNotReached:
     """
     Execute one private scientific observation.
 

@@ -2,6 +2,7 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 
 from app.infrastructure.science.private_inference import (
+    PrivateAgeInferenceNotReached,
     PrivateAgeInferenceObservation,
     PrivateAgeInferenceSession,
     RecordingScientificObserver,
@@ -105,8 +106,15 @@ def test_session_resets_observer_between_samples() -> None:
                 internal_estimate=18.5,
                 signal_quality_score=0.66,
             )
+            return {
+                "decision": "uncertain",
+                "rejection_reason": "threshold_uncertain",
+            }
 
-        return {"decision": "uncertain"}
+        return {
+            "decision": "uncertain",
+            "rejection_reason": "no_face",
+        }
 
     pipeline.run.side_effect = run
 
@@ -131,7 +139,58 @@ def test_session_resets_observer_between_samples() -> None:
         signal_quality_score=0.66,
     )
 
-    assert second is None
+    assert second == PrivateAgeInferenceNotReached(
+        reason="no_face",
+    )
+
+
+def test_session_reports_multiple_faces_before_inference() -> None:
+    observer = RecordingScientificObserver()
+    pipeline = AsyncMock()
+    pipeline.run.return_value = {
+        "decision": "uncertain",
+        "rejection_reason": "multiple_faces",
+    }
+
+    session = PrivateAgeInferenceSession(
+        pipeline=pipeline,
+        observer=observer,
+    )
+
+    result = asyncio.run(
+        session.observe(
+            image_bytes=b"multiple-faces",
+        )
+    )
+
+    assert result == PrivateAgeInferenceNotReached(
+        reason="multiple_faces",
+    )
+
+
+def test_session_rejects_unexplained_missing_inference() -> None:
+    observer = RecordingScientificObserver()
+    pipeline = AsyncMock()
+    pipeline.run.return_value = {
+        "decision": "uncertain",
+        "rejection_reason": "threshold_uncertain",
+    }
+
+    session = PrivateAgeInferenceSession(
+        pipeline=pipeline,
+        observer=observer,
+    )
+
+    try:
+        asyncio.run(
+            session.observe(
+                image_bytes=b"unexpected-no-inference",
+            )
+        )
+    except RuntimeError:
+        return
+
+    raise AssertionError("unexplained missing inference was accepted")
 
 
 def test_single_observation_wrapper_uses_session() -> None:

@@ -10,6 +10,7 @@ from app.infrastructure.science.private_batch import (
     execute_private_batch_request,
 )
 from app.infrastructure.science.private_inference import (
+    PrivateAgeInferenceNotReached,
     PrivateAgeInferenceObservation,
 )
 
@@ -58,22 +59,26 @@ def test_private_batch_returns_only_private_signals_on_success() -> None:
 
 
 def test_private_batch_reports_inference_not_reached() -> None:
-    session = AsyncMock()
-    session.observe.return_value = None
-
-    result = asyncio.run(
-        execute_private_batch_request(
-            request=request(),
-            session=session,
-            read_bytes=lambda path: b"image-bytes",
+    for reason in ("no_face", "multiple_faces"):
+        session = AsyncMock()
+        session.observe.return_value = PrivateAgeInferenceNotReached(
+            reason=reason,
         )
-    )
 
-    assert result == {
-        "sample_id": "appa_real:appa-real-000001",
-        "status": STATUS_FAILED,
-        "failure_reason": FAILURE_INFERENCE_NOT_REACHED,
-    }
+        result = asyncio.run(
+            execute_private_batch_request(
+                request=request(),
+                session=session,
+                read_bytes=lambda path: b"image-bytes",
+            )
+        )
+
+        assert result == {
+            "sample_id": "appa_real:appa-real-000001",
+            "status": STATUS_FAILED,
+            "failure_reason": FAILURE_INFERENCE_NOT_REACHED,
+            "inference_not_reached_reason": reason,
+        }
 
 
 def test_private_batch_sanitizes_execution_errors() -> None:

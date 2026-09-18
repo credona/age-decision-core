@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.infrastructure.science.private_inference import (
+    PrivateAgeInferenceNotReached,
     PrivateAgeInferenceSession,
 )
 
@@ -64,11 +65,15 @@ async def execute_private_batch_request(
             "failure_reason": FAILURE_EXECUTION_ERROR,
         }
 
-    if observation is None:
+    if isinstance(
+        observation,
+        PrivateAgeInferenceNotReached,
+    ):
         return {
             "sample_id": request.sample_id,
             "status": STATUS_FAILED,
             "failure_reason": FAILURE_INFERENCE_NOT_REACHED,
+            "inference_not_reached_reason": observation.reason,
         }
 
     return {
