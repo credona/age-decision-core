@@ -1,4 +1,4 @@
-"""Deterministically maintain the v2.5.0 release section in CHANGELOG.md."""
+"""Deterministically maintain the v2.6.0 release section in CHANGELOG.md."""
 
 from __future__ import annotations
 
@@ -16,27 +16,40 @@ from lib.changelog import (  # noqa: E402
 )
 
 CHANGELOG_PATH = Path("CHANGELOG.md")
-MANAGED_VERSION = "2.5.0"
+MANAGED_VERSION = "2.6.0"
 
 CHANGELOG_SECTION_ITEMS: tuple[str, ...] = (
-    "Introduced strict application ports for image decoding, preprocessing, and logging isolation.",
-    "Removed runtime scoring parameters from configuration and enforced scoring policy isolation.",
-    "Hardened engine status contract with normalized input_analysis and inference sections.",
-    "Improved error handling for unsupported input types with deterministic messaging.",
-    "Introduced model metadata and registry abstractions for age estimation "
-    "and face detection models.",
-    "Replaced low-level runtime model paths with stable model identifiers.",
-    "Simplified runtime configuration with shared common values and empty dev/prod overrides.",
-    "Moved age threshold, margin, score weights, and signal quality rules into "
-    "a versioned scoring policy.",
-    "Added deterministic scoring policy tests covering score bounds, "
-    "monotonicity, stability, and privacy.",
-    "Documented the public scoring methodology for cred_decision_score.",
-    "Documented model registry, reproducibility metadata, benchmark methodology, "
-    "and dataset transparency.",
-    "Removed threshold logic from runtime configuration.",
-    "Preserved the privacy-first public contract and response filtering guarantees.",
-    "Validated the release through Docker CI-equivalent checks.",
+    "Updated project and compatibility metadata to v2.6.0.",
+    "Aligned Core with the centralized age-decision-benchmark laboratory.",
+    "Removed legacy local benchmark orchestration from the service repository.",
+    "Kept Core focused on inference, public contract, privacy, and deterministic scoring.",
+    "Preserved Docker CI-equivalent validation after benchmark orchestration cleanup.",
+    "Added runtime private calibration policy loading for Core.",
+    "Added SHA-256 integrity verification for runtime calibration policies.",
+    "Added Ed25519 signature verification for runtime calibration policies.",
+    "Added contract, service, and model compatibility checks for runtime calibration activation.",
+    "Added fail-fast startup activation when runtime calibration is required but invalid.",
+    "Added deterministic Core calibration application before decision computation.",
+    (
+        "Added privacy tests ensuring private calibration internals are stripped "
+        "from public responses."
+    ),
+    "Added runtime calibration activation lifecycle records.",
+    "Added persistent active calibration state for Core.",
+    "Added persistent previous calibration state for rollback support.",
+    "Added runtime calibration rollback use case and rollback records.",
+    "Added append-only calibration provenance chain.",
+    "Added public calibration summary without private payload exposure.",
+    "Added trusted calibration registry validation.",
+    "Added calibration distribution manifest validation.",
+    "Added file-based calibration lifecycle store for Docker runtime.",
+    "Added file-based calibration manifest and trusted registry readers.",
+    "Added runtime activation integration with manifest and trusted registry validation.",
+    (
+        "Added tests proving runtime calibration changes public decision output "
+        "without leaking internals."
+    ),
+    "Added privacy tests preventing calibration metadata and private parameters from logs.",
 )
 
 

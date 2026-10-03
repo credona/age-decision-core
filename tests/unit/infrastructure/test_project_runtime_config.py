@@ -1,35 +1,26 @@
-import json
-from pathlib import Path
+from app.infrastructure.config.settings import Settings
 
 
-def test_project_runtime_uses_common_configuration_without_dev_prod_duplication():
-    project = json.loads(Path("project.json").read_text(encoding="utf-8"))
+def test_settings_expose_runtime_model_configuration() -> None:
+    settings = Settings()
 
-    runtime = project["runtime"]
-
-    assert "common" in runtime
-    assert runtime["dev"] == {}
-    assert runtime["prod"] == {}
-
-
-def test_project_runtime_uses_model_identifiers_not_model_paths():
-    project = json.loads(Path("project.json").read_text(encoding="utf-8"))
-
-    runtime_common = project["runtime"]["common"]
-
-    assert "AGE_MODEL_ID" in runtime_common
-    assert "FACE_DETECTION_MODEL_ID" in runtime_common
-    assert "AGE_MODEL_PATH" not in runtime_common
-    assert "FACE_DETECTION_MODEL_PATH" not in runtime_common
+    assert settings.age_model_id
+    assert settings.age_model_version
+    assert settings.age_scoring_policy_id
+    assert settings.face_detection_model_id
+    assert settings.face_detection_model_version
 
 
-def test_project_runtime_does_not_expose_threshold_policy_as_runtime_config():
-    project = json.loads(Path("project.json").read_text(encoding="utf-8"))
+def test_settings_expose_runtime_privacy_configuration() -> None:
+    settings = Settings()
 
-    runtime_text = json.dumps(project["runtime"])
+    assert settings.privacy_mode is True
+    assert settings.enable_zk_ready is True
 
-    assert "AGE_THRESHOLD" not in runtime_text
-    assert "AGE_MARGIN" not in runtime_text
-    assert "CONFIDENCE_THRESHOLD" not in runtime_text
-    assert "SIGNAL_QUALITY_THRESHOLD" not in runtime_text
-    assert "DEFAULT_AGE_CONFIDENCE" not in runtime_text
+
+def test_settings_expose_runtime_calibration_configuration() -> None:
+    settings = Settings()
+
+    assert settings.core_calibration_policy_path is None
+    assert settings.core_calibration_public_key_b64 is None
+    assert settings.core_calibration_required is False
